@@ -1,0 +1,38 @@
+cabal-version:      3.0
+name:               gemini-browser
+version:            0.1.0.0
+license:            GPL-3.0-only
+license-file:       LICENSE
+author:             Halvor Brunt
+maintainer:         halvor@brunt.no
+
+-- A copyright notice.
+-- copyright:
+build-type:         Simple
+
+-- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+executable gemini-browser
+    -- Import common warning flags.
+    import:           warnings
+
+    -- .hs or .lhs file containing the Main module.
+    main-is:          Main.hs
+
+    build-depends:   
+        base ^>=4.17.2.1,
+        attoparsec,
+        brick,
+        megaparsec,
+        network,
+        text,
+        bytestring
+
+    -- Directories containing source files.
+    hs-source-dirs:   app
+
+    default-language: Haskell2010
