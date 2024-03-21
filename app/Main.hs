@@ -9,4 +9,6 @@ main :: IO ()
 main = do 
   putStrLn "--- Main has been run! ---\n"
   tests -- Response tests
-  -- TODO: Add Request tests
+  putStrLn "----- Request Test"
+  testRequest
+

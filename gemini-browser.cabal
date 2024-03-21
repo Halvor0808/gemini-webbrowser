@@ -17,7 +17,8 @@ library
     import: warnings 
 
     other-modules:
-      Parse.Protocol.Response
+      Parse.Protocol.Response,
+      Parse.Protocol.Request
 
     build-depends:   
        base ^>=4.17.2.1,
@@ -29,7 +30,7 @@ library
        bytestring
 
     -- library directories
-    hs-source-dirs: app 
+    hs-source-dirs:   app 
 
 executable gemini-browser
     -- Import common warning flags.
