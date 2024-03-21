@@ -14,11 +14,18 @@ common warnings
     ghc-options: -Wall
 
 library
-    import: warnings 
+    import: 
+       warnings 
 
     other-modules:
-      Parse.Protocol.Response,
-      Parse.Protocol.Request
+        Protocol.Data.Response,
+        Protocol.Data.Request,
+        Protocol.Parser.Response,
+        Protocol.Parser.Request,
+
+        Test.Protocol.Parser.TestRequest,
+        Test.Protocol.Parser.TestResponse,
+        Test.Utils.ParseUtil,
 
     build-depends:   
        base ^>=4.17.2.1,
@@ -34,7 +41,8 @@ library
 
 executable gemini-browser
     -- Import common warning flags.
-    import:           warnings
+    import:           
+        warnings
 
     -- .hs or .lhs file containing the Main module.
     main-is:          Main.hs
@@ -47,6 +55,16 @@ executable gemini-browser
         network,
         text,
         bytestring
+    
+    other-modules:
+        Protocol.Data.Response,
+        Protocol.Data.Request,
+        Protocol.Parser.Response,
+        Protocol.Parser.Request,
+
+        Test.Protocol.Parser.TestRequest,
+        Test.Protocol.Parser.TestResponse,
+        Test.Utils.ParseUtil,
 
     -- Directories containing source files.
     hs-source-dirs:   app

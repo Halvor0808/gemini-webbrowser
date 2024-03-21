@@ -3,13 +3,15 @@
 
 # TODO
 - Protocol
-  - Parser
+  - Parsers
     - General
       - [ ] Rewrite tests using `compareResults`
       - [ ] Better fail messages -- using `fail`?
     - Request
       - [ ] Do I have to deal with U+FEFF ("Byte order mark")? (see gemini docs)
     - Response
-      - [ ] Optional parse-exection based on status codes?
+      - [ ] status codes: Optional parse-exection based on code?
+      - [ ] What to do with `makeMime`
+      - [ ] What to do with uses of `optional`
   - Gemtext
     - [ ] All of it
