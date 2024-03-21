@@ -1,8 +1,3 @@
-
-
-Client: gemini://example.com/
-
-Server:
 20 text/gemini
 # Examtple title
 Welcome to my Gemini Capsule
