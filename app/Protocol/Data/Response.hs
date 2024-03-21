@@ -50,20 +50,20 @@ data StatusCode = InputExpected     Int
                 deriving(Eq)
 
 instance Show StatusCode where
-  show (InputExpected i)     = show i
-  show (Success i)           = show i
-  show (Redirection i)       = show i
-  show (TemporaryFailure i)  = show i
-  show (PermanentFailure i)  = show i
-  show (ClientCertificate i) = show i
+  show (InputExpected i)     = show i ++ " InputExpected"
+  show (Success i)           = show i ++ " Success"
+  show (Redirection i)       = show i ++ " Redirection"
+  show (TemporaryFailure i)  = show i ++ " TemporaryFailure"
+  show (PermanentFailure i)  = show i ++ " PermanentFailure"
+  show (ClientCertificate i) = show i ++ " ClientCertificate"
 
 
-getStatusCode :: Int -> Maybe StatusCode
-getStatusCode x
-  | x >= 10 && x < 20 = Just $ InputExpected x
-  | x >= 20 && x < 30 = Just $ Success x
-  | x >= 30 && x < 40 = Just $ Redirection x
-  | x >= 40 && x < 50 = Just $ TemporaryFailure x
-  | x >= 50 && x < 60 = Just $ PermanentFailure x
-  | x >= 60 && x < 70 = Just $ ClientCertificate x
-  | otherwise         = Nothing
+getStatusCode :: Int -> Int -> StatusCode
+getStatusCode x _
+  | x == 1 = InputExpected x
+  | x == 2 = Success x
+  | x == 3 = Redirection x
+  | x == 4 = TemporaryFailure x
+  | x == 5 = PermanentFailure x
+  | x == 6 = ClientCertificate x
+  | otherwise = error "Invalid status code" -- shouldn't ever fail here. Should fail at `pStatusCode`

@@ -9,6 +9,7 @@ import qualified Data.ByteString as B
 import Control.Applicative (optional) --(<|>), many
 
 import Protocol.Data.Response
+import Data.Text.Internal.Read (digitToInt)
 
 pPacket :: Parser Packet
 pPacket = do
@@ -64,20 +65,18 @@ pParameters = many1 pParam
         value <- char '=' *> pMimeAlphabet --possibly a subset, only chars
         return (key, value)
 
-crlf :: B.ByteString
-crlf  = "\r\n"
-
 pCrlf :: Parser ()
 pCrlf = do
-  _ <- "\r" *> "\n"
+  _ <- "\r\n"
   return ()
 
 pStatusCode :: Parser StatusCode
 pStatusCode = do
-  num <- decimal <* pCrlf
-  case getStatusCode num of
-      Just statusCode -> return statusCode
-      Nothing         -> fail "pStatusCode" -- I would like to do something like this, but general for all parsers? 
+  dig1 <- digitToInt <$> digit :: Parser Int
+  dig2 <- digitToInt <$> (digit <* endOfLine)
+  case (dig1, dig2) of
+    (d1, d2) | d1 > 0 && d1 <= 6 -> return $ getStatusCode d1 d2
+    _ -> fail "Invalid status code"
 
 
 

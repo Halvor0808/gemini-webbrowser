@@ -25,6 +25,7 @@ testStatusCode :: IO ()
 testStatusCode = do
   putStrLn "----- StatusCode: -----"
   badParseTest pStatusCode "01\r\n"
+  badParseTest pStatusCode "10\r\n"
   badParseTest pStatusCode "20\r\n"
   badParseTest pStatusCode "35\r\n"
   badParseTest pStatusCode "69\r\n"
@@ -53,7 +54,7 @@ testMime = do
 testCrlf :: IO ()
 testCrlf = do
   putStrLn "----- Crlf: -----"
-  badParseTest pCrlf crlf
+  badParseTest pCrlf "\r\n"
   badParseTest pCrlf "\n\rnope"
   badParseTest pCrlf "\n\r "
 
