@@ -3,7 +3,6 @@
 
 module Protocol.Parser.Response where
 
-import qualified Data.Attoparsec.ByteString.Char8 as BC
 import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString as B
 import Control.Applicative (optional) --(<|>), many
@@ -54,7 +53,7 @@ isMimeAlpha :: Char -> Bool
 isMimeAlpha c = c `elem` mimeAlphabet
 
 pMimeAlphabet :: Parser B.ByteString
-pMimeAlphabet = BC.takeWhile1 isMimeAlpha
+pMimeAlphabet = takeWhile1 isMimeAlpha
 
 
 pParameters :: Parser MIMEMeta
@@ -64,11 +63,6 @@ pParameters = many1 pParam
         key   <- char ';' *> pMimeAlphabet -- possibly a subset, only of chars?
         value <- char '=' *> pMimeAlphabet --possibly a subset, only chars
         return (key, value)
-
-pCrlf :: Parser ()
-pCrlf = do
-  _ <- "\r\n"
-  return ()
 
 pStatusCode :: Parser StatusCode
 pStatusCode = do

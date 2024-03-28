@@ -16,7 +16,6 @@ import Data.Attoparsec.ByteString (takeByteString)
 tests :: IO ()
 tests = do
   testStatusCode
-  testCrlf
   testMime
   testHeader
   testBody
@@ -49,14 +48,6 @@ testMime = do
   badParseTest pMime "text/gemini;format=gemtext" -- works
   badParseTest pMime "text/gemini;format=gemtext;name=myFile" -- works
   badParseTest pMime "text/gemini; notRight=meta.typing" -- fails: spacing
-
-
-testCrlf :: IO ()
-testCrlf = do
-  putStrLn "----- Crlf: -----"
-  badParseTest pCrlf "\r\n"
-  badParseTest pCrlf "\n\rnope"
-  badParseTest pCrlf "\n\r "
 
 testHeader :: IO ()
 testHeader = do
