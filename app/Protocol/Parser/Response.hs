@@ -5,44 +5,34 @@ module Protocol.Parser.Response where
 
 import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString as B
-import Control.Applicative (optional) --(<|>), many
+import Control.Applicative (optional)
+import Data.Text.Internal.Read (digitToInt)
 
 import Protocol.Data.Response
-import Data.Text.Internal.Read (digitToInt)
+import Protocol.Parser.Gemtext
+import Control.Monad.State.Lazy (evalStateT)
+
 
 pPacket :: Parser Packet
 pPacket = do
-  header <- pHeader
-  Packet header <$> pBody
+  Packet <$> pHeader <*> pBody
   where
-    pBody = takeByteString  -- bad implementation, should limit on length(??)
+    pBody = evalStateT pLines False
   -- Change to execute based on what status code?
-
-
 
 pHeader :: Parser Header
 pHeader = do
-  status <- pStatusCode
-  _      <- char ' '
-  mime   <- optional pMime -- optional?
-  return $ Header status mime
+  code <- pStatusCode <* char ' '
+  case code of 
+    (SuccessCode _ _) -> Header code <$> pMime
+    _           -> return $ Header code Nothing
 
-
---------------------------------------
--- unused?
-makeMime :: Maybe MainMimeType -> Maybe SubMimeType -> Maybe MIMEMeta -> Maybe MIME
-makeMime Nothing _ _                = Nothing
-makeMime _ Nothing _                = Nothing
-makeMime (Just typ) (Just subtyp) p = Just $ MIME typ subtyp p
----------------------------------
-
-pMime :: Parser MIME
+pMime :: Parser (Maybe MIME)
 pMime = do
-  typ     <- pMimeAlphabet
-  _       <- char '/'
-  subtype <- pMimeAlphabet
-  params  <- optional pParameters -- optional?
-  return $ MIME typ subtype params
+  typ     <- optional pMimeAlphabet
+  subtype <-  char '/' *> optional pMimeAlphabet
+  params  <- optional pParameters
+  return $ makeMime typ subtype params
 
 mimeAlphabet :: String
 mimeAlphabet = ['a'..'z' ] ++ ['A'..'Z']
@@ -66,11 +56,9 @@ pParameters = many1 pParam
 
 pStatusCode :: Parser StatusCode
 pStatusCode = do
-  dig1 <- digitToInt <$> digit :: Parser Int
-  dig2 <- digitToInt <$> (digit <* endOfLine)
+  dig1 <- digitToInt <$> digit
+  dig2 <- digitToInt <$> digit
   case (dig1, dig2) of
     (d1, d2) | d1 > 0 && d1 <= 6 -> return $ getStatusCode d1 d2
     _ -> fail "Invalid status code"
-
-
 

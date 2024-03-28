@@ -3,13 +3,14 @@
 module Main where
 
 
-import Test.Protocol.Parser.TestResponse (tests)
-import Test.Protocol.Parser.TestRequest
+import Test.Protocol.Parser.TestResponse (testResponse)
+import Test.Protocol.Parser.TestRequest (testRequest)
 
 main :: IO ()
 main = do 
   putStrLn "--- Main has been run! ---\n"
-  tests -- Response tests
+  testResponse
   putStrLn "----- Request: -----"
   testRequest
+
 

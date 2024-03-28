@@ -1,4 +1,7 @@
-module Test.Protocol.Parser.TestRequest where
+module Test.Protocol.Parser.TestRequest ( 
+  testRequest
+)
+where
 
 import Test.Utils.ParseUtil (badParseTest)
 import Protocol.Parser.Request

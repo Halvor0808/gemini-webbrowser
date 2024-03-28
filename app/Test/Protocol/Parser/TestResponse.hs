@@ -1,34 +1,37 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module Test.Protocol.Parser.TestResponse -- (tests) 
+module Test.Protocol.Parser.TestResponse (
+   testResponse
+) 
 where
 
 import Test.Utils.ParseUtil (badParseTest)
+import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
 import Protocol.Parser.Response
+import Protocol.Parser.Gemtext (pLines)
 
 import qualified Data.ByteString as B
--- import Data.ByteString.Char8 (pack, unpack, readFile)
 import qualified Data.ByteString.Char8 as C8
-import Data.Attoparsec.ByteString (takeByteString)
+import Control.Monad.State.Lazy (evalStateT)
 
 
-tests :: IO ()
-tests = do
+testResponse :: IO ()
+testResponse = do
   testStatusCode
   testMime
   testHeader
-  testBody
+  testGemtextParser
+  
 
 testStatusCode :: IO ()
 testStatusCode = do
   putStrLn "----- StatusCode: -----"
-  badParseTest pStatusCode "01\r\n"
-  badParseTest pStatusCode "10\r\n"
-  badParseTest pStatusCode "20\r\n"
-  badParseTest pStatusCode "35\r\n"
-  badParseTest pStatusCode "69\r\n"
-  badParseTest pStatusCode "70\r\n"
+  badParseTest pStatusCode "01"
+  badParseTest pStatusCode "10"
+  badParseTest pStatusCode "20"
+  badParseTest pStatusCode "35"
+  badParseTest pStatusCode "69"
+  badParseTest pStatusCode "70"
 
 testParameters :: IO ()
 testParameters = do
@@ -52,21 +55,10 @@ testMime = do
 testHeader :: IO ()
 testHeader = do
   putStrLn "----- Header: -----"
-  badParseTest pHeader "20\r\n text/gemini;format=boring"
-  badParseTest pHeader header01
-  badParseTest pHeader header02
-  badParseTest pHeader header03
-  -- Add other test cases
-
-header01, header02, header03 :: B.ByteString
-header01 = "20\r\n"
-header02 = "20 text/gemini\r\n"
-header03 = "30 gemini://gemini.circumlunar.space\r\n"
-
-testBody :: IO ()
-testBody = do
-  putStrLn "----- Body: -----"
-  getResponseEx >>= badParseTest takeByteString
-
+  badParseTest pHeader "20 text/gemini;format=boring" -- pass
+  badParseTest pHeader "20\r\n" -- fail: unexpected \r\n
+  badParseTest pHeader "20 text/gemini\r\n" -- pass
+  badParseTest pHeader "30 gemini://gemini.circumlunar.space\r\n" -- fail: unexpected "/"
+ 
 getResponseEx :: IO B.ByteString
 getResponseEx = C8.readFile "app/Test/Input/response.eg"

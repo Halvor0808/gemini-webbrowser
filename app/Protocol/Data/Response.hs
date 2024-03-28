@@ -1,13 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Protocol.Data.Response where
+module Protocol.Data.Response (
+  Packet(..), Header(..), 
+  makeMime, MIME, MainMimeType, SubMimeType, MIMEMeta, 
+  StatusCode(..), getStatusCode
+) where
 
-import Data.ByteString
+import Data.ByteString ( ByteString )
 import qualified Data.ByteString.Char8 as B
+import Protocol.Data.Gemtext (Line)
 
 
 data Packet = Packet { header :: Header
-                     , body   :: ByteString -- should be [ByteString] ??
+                     , body   :: [Line]
                      } deriving (Show, Eq)
 
 
@@ -20,12 +25,18 @@ instance Show Header where
   show (Header s Nothing ) = show s
 
 
-data MIME = MIME { mainType    :: ByteString
-                 , subType :: ByteString
-                 , parameters:: Maybe MIMEMeta
-                 } deriving (Eq)
 type MainMimeType = ByteString
 type SubMimeType = ByteString
+data MIME = MIME { mainType   :: MainMimeType
+                 , subType    :: SubMimeType
+                 , parameters :: Maybe MIMEMeta
+                 } deriving (Eq)
+
+makeMime :: Maybe MainMimeType -> Maybe SubMimeType -> Maybe MIMEMeta -> Maybe MIME
+makeMime Nothing Nothing p          = Just $ MIME "text" "gemini" p
+makeMime Nothing _ _                = Nothing
+makeMime _ Nothing _                = Nothing
+makeMime (Just typ) (Just subtyp) p = Just $ MIME typ subtyp p
 
 instance Show MIME where
   show (MIME m s (Just p)) = B.unpack m ++ "/" ++ B.unpack s ++ showParameters p
@@ -41,29 +52,20 @@ showParameters xs = Prelude.concatMap ((";"++) . show1Param) xs
     show1Param (k,v) = B.unpack k ++ "=" ++ B.unpack v
 
 
-data StatusCode = InputExpected     Int
-                | Success           Int
-                | Redirection       Int
-                | TemporaryFailure  Int
-                | PermanentFailure  Int
-                | ClientCertificate Int
-                deriving(Eq)
-
-instance Show StatusCode where
-  show (InputExpected i)     = show i ++ " InputExpected"
-  show (Success i)           = show i ++ " Success"
-  show (Redirection i)       = show i ++ " Redirection"
-  show (TemporaryFailure i)  = show i ++ " TemporaryFailure"
-  show (PermanentFailure i)  = show i ++ " PermanentFailure"
-  show (ClientCertificate i) = show i ++ " ClientCertificate"
-
+data StatusCode = InputExpected     Int Int 
+                | Success           Int Int 
+                | Redirection       Int Int 
+                | TemporaryFailure  Int Int 
+                | PermanentFailure  Int Int 
+                | ClientCertificate Int Int 
+                deriving(Eq, Show)
 
 getStatusCode :: Int -> Int -> StatusCode
-getStatusCode x _
-  | x == 1 = InputExpected x
-  | x == 2 = Success x
-  | x == 3 = Redirection x
-  | x == 4 = TemporaryFailure x
-  | x == 5 = PermanentFailure x
-  | x == 6 = ClientCertificate x
+getStatusCode x y
+  | x == 1 = InputExpected x y
+  | x == 2 = Success x y
+  | x == 3 = Redirection x y
+  | x == 4 = TemporaryFailure x y
+  | x == 5 = PermanentFailure x y
+  | x == 6 = ClientCertificate x y
   | otherwise = error "Invalid status code" -- shouldn't ever fail here. Should fail at `pStatusCode`

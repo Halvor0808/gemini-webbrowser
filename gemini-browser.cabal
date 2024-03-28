@@ -13,32 +13,6 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-library
-    import: 
-       warnings 
-
-    other-modules:
-        Protocol.Data.Response,
-        Protocol.Data.Request,
-        Protocol.Parser.Response,
-        Protocol.Parser.Request,
-
-        Test.Protocol.Parser.TestRequest,
-        Test.Protocol.Parser.TestResponse,
-        Test.Utils.ParseUtil,
-
-    build-depends:   
-       base ^>=4.17.2.1,
-       attoparsec,
-       brick,
-       megaparsec,
-       network,
-       text,
-       bytestring
-
-    -- library directories
-    hs-source-dirs:   app 
-
 executable gemini-browser
     -- Import common warning flags.
     import:           
@@ -49,6 +23,7 @@ executable gemini-browser
 
     build-depends:   
         base ^>=4.17.2.1,
+        mtl,
         attoparsec,
         brick,
         megaparsec,
@@ -59,11 +34,15 @@ executable gemini-browser
     other-modules:
         Protocol.Data.Response,
         Protocol.Data.Request,
+        Protocol.Data.Gemtext,
+
         Protocol.Parser.Response,
         Protocol.Parser.Request,
-
+        Protocol.Parser.Gemtext,
+        
         Test.Protocol.Parser.TestRequest,
         Test.Protocol.Parser.TestResponse,
+        Test.Protocol.Parser.TestGemtextParser,
         Test.Utils.ParseUtil,
 
     -- Directories containing source files.
