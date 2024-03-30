@@ -10,9 +10,7 @@ import Protocol.Parser.Response
 import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
 import Utils.ParseUtil (pParameters)
 
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
-
 
 testResponse :: IO ()
 testResponse = do
@@ -60,14 +58,11 @@ testResponseParser = do
   putStrLn "----- Response: -----"
   badParseTest pResponse "15 Input prompt. Gimme some\r\n" -- works
   badParseTest pResponse "1 Input prompt. Gimme some\r\n" -- Fails: 1 digit
-  getResponseEx >>= badParseTest pResponse -- works
-  -- another 20 example
+  C8.readFile "app/Test/Input/response01-success.eg" >>= badParseTest pResponse -- works
+  C8.readFile "app/Test/Input/response02-success.eg" >>= badParseTest pResponse -- works
   badParseTest pResponse "30 gemini://new.url.visit.to/\r\n" -- works
   badParseTest pResponse "30 gemini://new.url.visit.to/" -- Fails: missing EOL
   badParseTest pResponse "30 gemini://missing.forward.slash\r\n" -- works: Does it recover the '/'?
   badParseTest pResponse "40 Error message for 40\r\n" -- works
   badParseTest pResponse "50 Error message for 50\r\n" -- works
   badParseTest pResponse "60 You need a ceritificate my man\r\n" -- works
- 
-getResponseEx :: IO B.ByteString
-getResponseEx = C8.readFile "app/Test/Input/response.eg"
