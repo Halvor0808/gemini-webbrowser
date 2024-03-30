@@ -6,22 +6,21 @@ module Test.Protocol.Parser.TestResponse (
 where
 
 import Test.Utils.ParseUtil (badParseTest)
-import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
 import Protocol.Parser.Response
-import Protocol.Parser.Gemtext (pLines)
+import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
+import Utils.ParseUtil (pParameters)
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
-import Control.Monad.State.Lazy (evalStateT)
 
 
 testResponse :: IO ()
 testResponse = do
   testStatusCode
+  testParameters
   testMime
-  testHeader
   testGemtextParser
-  
+  testResponseParser
 
 testStatusCode :: IO ()
 testStatusCode = do
@@ -35,30 +34,40 @@ testStatusCode = do
 
 testParameters :: IO ()
 testParameters = do
-  putStrLn "----- Parameters: -----"
-  badParseTest pParameters ";format=markdown"
-  badParseTest pParameters "; notRight=meta.typing"
-  badParseTest pParameters ";typer=sub.type+mega;type2=subtype2;typ3=subtyp3; m istake=sub"
-  badParseTest pParameters ";đu←↓→œ=wrong;"
+  putStrLn "----- Response Parameters: -----"
+  badParseTest pResponseParams ";format=markdown\r\n" -- works
+  badParseTest pResponseParams "; notRight=meta.typing\r\n" -- fails
+  badParseTest pResponseParams ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n" -- works
+  badParseTest pResponseParams ";đu←↓→œ=wrong;\r\n" -- fails
+  where 
+    pResponseParams = pParameters ';' '='
 
 testMime :: IO ()
 testMime = do
   putStrLn "----- Mime: -----"
   badParseTest pMime "text/gemini" -- works
-  badParseTest pMime "audio/mpeg" -- works
-  badParseTest pMime "tex t/gemini" -- fails: spacing
-  badParseTest pMime "fail/ª™§º©‘’&ŁŒıÐª" -- fails: illegal chars
+  badParseTest pMime "audio/mpeg;hello=world" -- works
+  badParseTest pMime "tex t/gemini;candy=nice" -- fails: spacing -> defaults
+  badParseTest pMime "text/gem ini;candy=nice" -- fails: spacing -> text/gem (no params)
+  badParseTest pMime "fail/ª™§º©‘’&ŁŒıÐª" -- fails: illegal chars -> defaults
   badParseTest pMime "text/gemini;format=gemtext" -- works
-  badParseTest pMime "text/gemini;format=gemtext;name=myFile" -- works
-  badParseTest pMime "text/gemini; notRight=meta.typing" -- fails: spacing
+  badParseTest pMime "text/word;format=gemtext;name=myFile" -- works
+  badParseTest pMime "text/spacingError;no tRight=meta.typing" -- fails: spacing -> text/spacingError (no params)
 
-testHeader :: IO ()
-testHeader = do
-  putStrLn "----- Header: -----"
-  badParseTest pHeader "20 text/gemini;format=boring" -- pass
-  badParseTest pHeader "20\r\n" -- fail: unexpected \r\n
-  badParseTest pHeader "20 text/gemini\r\n" -- pass
-  badParseTest pHeader "30 gemini://gemini.circumlunar.space\r\n" -- fail: unexpected "/"
+
+testResponseParser :: IO ()
+testResponseParser = do
+  putStrLn "----- Response: -----"
+  badParseTest pResponse "15 Input prompt. Gimme some\r\n" -- works
+  badParseTest pResponse "1 Input prompt. Gimme some\r\n" -- Fails: 1 digit
+  getResponseEx >>= badParseTest pResponse -- works
+  -- another 20 example
+  badParseTest pResponse "30 gemini://new.url.visit.to/\r\n" -- works
+  badParseTest pResponse "30 gemini://new.url.visit.to/" -- Fails: missing EOL
+  badParseTest pResponse "30 gemini://missing.forward.slash\r\n" -- works: Does it recover the '/'?
+  badParseTest pResponse "40 Error message for 40\r\n" -- works
+  badParseTest pResponse "50 Error message for 50\r\n" -- works
+  badParseTest pResponse "60 You need a ceritificate my man\r\n" -- works
  
 getResponseEx :: IO B.ByteString
 getResponseEx = C8.readFile "app/Test/Input/response.eg"

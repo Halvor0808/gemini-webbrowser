@@ -1,11 +1,16 @@
-module Protocol.Data.Request where
+module Protocol.Data.Request (
+    Url(..),
+    Request,
+) where
 
 import Data.ByteString.Char8
 
-{-Format
- -<URL><CR><LF>
- -}
-data Request = Request { protocol :: ByteString
-                       --, port     :: Int 
-                       , uri      :: ByteString }
-                       deriving (Show, Eq)
+type Request = Url
+data Url = Url { scheme :: ByteString
+               , authority :: ByteString
+               , port :: Int
+               , path :: ByteString
+               , query :: ByteString
+               , fragment :: ByteString
+               } deriving  (Eq, Show)
+

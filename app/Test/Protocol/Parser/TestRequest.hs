@@ -1,4 +1,6 @@
-module Test.Protocol.Parser.TestRequest ( 
+{-# LANGUAGE OverloadedStrings #-}
+
+module Test.Protocol.Parser.TestRequest (
   testRequest
 )
 where
@@ -6,10 +8,25 @@ where
 import Test.Utils.ParseUtil (badParseTest)
 import Protocol.Parser.Request
 
-import Data.ByteString.Char8 (pack)
-
 
 testRequest :: IO ()
 testRequest = do 
-  badParseTest pRequest (pack "gemini://geminiprotocol.net") -- success
-  badParseTest pRequest (pack "https://geminiprotocol.net") -- fail
+  testUrl
+  testPath
+
+testUrl :: IO ()
+testUrl = do
+  putStrLn "----- Url: -----"
+  badParseTest pUrl "https://geminiprotocol.net" -- success
+  badParseTest pUrl "gemini://geminiprotocol.net" -- fail
+
+testPath :: IO ()
+testPath = do
+  putStrLn "----- Path: -----"
+  badParseTest pPath "/path/to/file" -- /path/to/file/
+  badParseTest pPath "/path/" -- /path/
+  badParseTest pPath "/" -- /
+  badParseTest pPath "//" -- / (with "/" in leftover input)
+  badParseTest pPath "" -- Fails
+  badParseTest pPath "path" -- Fails
+  badParseTest pPath "path/" -- Fails

@@ -5,18 +5,16 @@ module Protocol.Parser.Gemtext
     runPLines, pLines
 ) where
 
-import Protocol.Data.Gemtext
+import Utils.ParseUtil (consumeRestOfLine)
+import Protocol.Data.Gemtext ( Line(..) )
 import Data.Attoparsec.ByteString.Char8
+    ( Parser, parseOnly, many1, char, isSpace, skipSpace, takeTill )
 import Data.ByteString (ByteString)
 import Control.Applicative (optional, (<|>))
 import Control.Monad.State.Lazy
+    ( StateT, MonadState(put, get), evalStateT, MonadTrans(lift) )
 
 
--- UTIL
-consumeRestOfLine :: Parser ByteString
-consumeRestOfLine = takeTill (`elem` ("\r\n":: String)) <* endOfLine
-
--- TODO: Add loop
 type StateParser a = StateT Bool Parser a
 
 runPLines :: ByteString -> Either String [Line]

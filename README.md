@@ -5,20 +5,18 @@
 - Protocol
   - Parsers
     - General
-      - [ ] Rewrite how to handle StatusCodes and then the following parsing.
-        - [ ] First Find status code, and then continue parsing based on STATUS
+      - [ ] First Find status code, and then continue parsing based on STATUS
       - [ ] Rewrite tests using `compareResults`
       - [ ] Better fail messages -- using `fail`?
     - Request
       - [ ] Do I have to deal with U+FEFF ("Byte order mark")? (see gemini docs)
     - Response
       - [ ] status codes: Optional parse-exection based on code?
-      - [x] What to do with `makeMime`
       - [x] What to do with uses of `optional`
+      - [ ] What to do with `makeMime`, `pMime` & `Mime`
+        - Currently: recovers for any mistake with default: text/gemini charset=utf-8. Should it fail instead of default? Should it only default if whole `<META>` is empty ("")?
       - [ ] If a MIME type begins with "text/" and no charset is explicitly given, the charset should be assumed to be UTF-8. Compliant clients MUST support UTF-8-encoded text/* responses. Clients MAY optionally support other encodings. Clients receiving a response in a charset they cannot decode SHOULD gracefully inform the user what happened instead of displaying garbage. If <META> is an empty string, the MIME type MUST default to "text/gemini; charset=utf-8". The text/gemini media type is defined in section 5.
       - [ ] Deal with charset
-  - Gemtext
-    - [x] Parse differnet line types
 
 
 
@@ -72,3 +70,4 @@ The contents of `<META>` (and/or the specific 6x code) may provide additional in
 
  - Charset: Default = UTF-8
  - From MIME-parameters: Do not assume value of "lang". For simple clients: ignore:)
+ - If a MIME type begins with "text/" and no charset is explicitly given, the charset should be assumed to be UTF-8. Compliant clients MUST support UTF-8-encoded text/* responses. Clients MAY optionally support other encodings. Clients receiving a response in a charset they cannot decode SHOULD gracefully inform the user what happened instead of displaying garbage.
