@@ -26,7 +26,9 @@ pLines = many1 pLine
 pLine :: StateParser Line
 pLine = do
     b <- get
-    if b then lift pPreformattedTextLine
+    if b then 
+            pTogglePreformatMode
+            <|> lift pPreformattedTextLine
         else
             pTogglePreformatMode
             <|> lift pLinkLine
@@ -45,7 +47,7 @@ pLinkLine = do
 
 pTogglePreformatMode :: StateParser Line
 pTogglePreformatMode = do
-    altText <- lift $ "```" *> consumeRestOfLine
+    altText <- lift $ "```" *> skipSpace *> consumeRestOfLine
     bool <- get
     put (not bool)
     return $ TogglePreformatMode altText

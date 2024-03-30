@@ -13,7 +13,7 @@ import Data.ByteString (ByteString)
 
 testGemtextParser :: IO ()
 testGemtextParser = do
-    putStrLn "----- Body: -----"
+    putStrLn "----- GemText: -----"
     badParseTest (evalStateT pLines False) bodyEx01 -- pass
     badParseTest (evalStateT pLines False) bodyEx02 -- pass
     badParseTest (evalStateT pLines False) bodyEx03 -- pass
