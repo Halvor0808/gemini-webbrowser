@@ -11,9 +11,10 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 
 common warnings
-    ghc-options: -Wall
+    ghc-options: -Wall 
 
 executable gemini-browser
+    ghc-options: -threaded
     -- Import common warning flags.
     import:           
         warnings
@@ -39,6 +40,8 @@ executable gemini-browser
         Protocol.Parser.Response,
         Protocol.Parser.Request,
         Protocol.Parser.Gemtext,
+
+        Tui.Tui, 
 
         Utils.ParseUtil,
         
