@@ -7,7 +7,8 @@ module Utils.ParseUtil (
     isEOL,
 ) where
 
-import Data.Attoparsec.ByteString.Char8  (Parser, takeTill, takeWhile1, endOfLine, char, many1)
+import Data.Attoparsec.ByteString.Char8  
+  (Parser, takeTill, takeWhile1, endOfLine, char, many1)
 import Data.ByteString (ByteString)
 import Protocol.Data.Response (Parameters(..))
 
