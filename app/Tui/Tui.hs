@@ -1,11 +1,31 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Tui.Tui (tuiRun) where
 
 
-import Brick
-import Brick.Widgets.Center (center, hCenter)
-import Brick.Widgets.Core
-import Brick.Widgets.Border
+import qualified Brick.Widgets.Border as B
+import qualified Brick.Widgets.Edit as E
+import qualified Brick.Focus as F
+import qualified Brick.Types as T
+import qualified Brick.Main as M
 import Brick.Widgets.Border.Style (unicode)
+import Brick.AttrMap (attrMap, AttrMap, attrName)
+import Brick.Types (Widget, EventM)
+import Brick.Widgets.Center (hCenter)
+import Brick.Widgets.Core
+import Brick.Util (on)
+
+import Graphics.Vty.Attributes
+import Graphics.Vty.Input.Events
+import qualified Graphics.Vty as V
+
+import Data.ByteString.Char8 (unpack)
+import Lens.Micro.Mtl
+import Lens.Micro.TH
+import Lens.Micro
+
+import Protocol.Data.Gemtext (Line(..))
 
 
 data Name = PageContent

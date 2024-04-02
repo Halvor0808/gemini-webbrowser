@@ -30,7 +30,11 @@ executable gemini-browser
         megaparsec,
         network,
         text,
-        bytestring
+        bytestring,
+        vty,
+        microlens,
+        microlens-th,
+        microlens-mtl,
     
     other-modules:
         Protocol.Data.Response,
