@@ -78,15 +78,11 @@ dynamicLeftRightPad :: Int -> Widget n -> Widget n
 dynamicLeftRightPad = padLeftRight
 
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = do 
-  M.halt
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return () -- TODO: display help
-handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) 
-  = M.halt
-handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) 
-  = focusRing %= F.focusNext
-handleEvent (T.VtyEvent (V.EvKey V.KBackTab [])) 
-  = focusRing %= F.focusPrev
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return ()
+handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
+handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = focusRing %= F.focusNext
+handleEvent (T.VtyEvent (V.EvKey V.KBackTab [])) = focusRing %= F.focusPrev
 handleEvent ev = do
   r <- use focusRing
   case F.focusGetCurrent r of 
