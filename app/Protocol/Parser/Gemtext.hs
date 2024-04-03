@@ -8,7 +8,7 @@ module Protocol.Parser.Gemtext
 import Utils.ParseUtil (consumeRestOfLine)
 import Protocol.Data.Gemtext ( Line(..) )
 import Data.Attoparsec.ByteString.Char8
-    ( Parser, parseOnly, many1, char, isSpace, skipSpace, takeTill )
+    ( Parser, parseOnly, many1, char, isSpace, skipSpace, takeTill, option )
 import Data.ByteString (ByteString)
 import Control.Applicative (optional, (<|>))
 import Control.Monad.State.Lazy
@@ -42,7 +42,7 @@ pLinkLine = do
     _ <- "=>"
     _ <- skipSpace
     url <- takeTill isSpace
-    altName <- optional consumeRestOfLine
+    altName <- optional (" " *> consumeRestOfLine)
     return $ LinkLine url altName
 
 pTogglePreformatMode :: StateParser Line
