@@ -5,7 +5,7 @@ module Main where
 
 import Test.Protocol.Parser.TestResponse (testResponse)
 import Test.Protocol.Parser.TestRequest (testRequest)
-import Tui.Tui (tuiRun)
+import Tui (tuiRun)
 
 main :: IO ()
 main = do

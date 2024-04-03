@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Tui.Tui (tuiRun) where
+module Tui (tuiRun) where
 
 
 import qualified Brick.Widgets.Border as B
