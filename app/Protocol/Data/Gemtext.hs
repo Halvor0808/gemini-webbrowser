@@ -1,18 +1,14 @@
 module Protocol.Data.Gemtext (
         Line (..),
-        AltText, 
 ) where
 
 import Data.ByteString
 
-type AltText = ByteString
-type LText = ByteString
-
-data Line = TextLine             LText
-          | LinkLine             LText (Maybe AltText)
-          | TogglePreformatMode  AltText
-          | PreformattedTextLine LText
-          | HeadingLine          Int LText
-          | UnorderedListLine    LText
-          | QuoteLine            LText
+data Line = TextLine             { _text        :: ByteString }
+          | TogglePreformatMode  { _ByteString  :: ByteString }
+          | PreformattedTextLine { _text        :: ByteString }
+          | UnorderedListLine    { _text        :: ByteString }
+          | QuoteLine            { _text        :: ByteString }
+          | HeadingLine          { _level       :: Int        , _text :: ByteString}
+          | LinkLine             { _link        :: ByteString , _displayText :: Maybe ByteString}
           deriving (Show, Eq)
