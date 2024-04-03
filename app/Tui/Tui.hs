@@ -43,7 +43,7 @@ drawUi st = [ui]
     where
       searchFieldW  = B.border $ F.withFocusRing (_focusRing st) (E.renderEditor (str . unlines)) (_searchField st)
       footer       = str "Not yet implemeted: Esc/Ctrl-q - quit, Ctrl-h - help"
-      content      = viewport PageContent T.Vertical $ strWrap "Some random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowo Some random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowo"
+      content      = viewport PageContent T.Vertical $ strWrap $ _content st
       contentArea  = B.borderWithLabel (str "Content-separator")
         $ padTop (Pad 2) $ dynamicLeftRightPad 3 content
       --
@@ -94,11 +94,10 @@ handleEvent ev = do
     Just SearchField ->  case ev of
               (T.VtyEvent (V.EvKey V.KEnter []))
                 -> do 
-                  sf <- use searchField -- note overwriting r
+                  sf <- use searchField
                   let query = concat $ E.getEditContents sf
-                  let result = query
-                  content .= result
-                  -- TODO: Use network to fetch content. Also: percent-encode quer
+                  let result = query -- TODO: Use network to fetch content. Also: percent-encode query
+                  T.modify (content .~ result)
                   return () 
               _ ->  zoom searchField $  E.handleEditorEvent ev
     Nothing -> return ()
@@ -116,7 +115,7 @@ initialState :: St
 initialState =
   St (F.focusRing [SearchField, PageContent])
      (E.editor SearchField (Just 1) "")
-     []
+     "Somodifye random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowo Some random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowoSome random content, temporarily. wooooooooooooooooooooooooooow lots of content------------------------------------- mmmmmmmmmmmmmmmmmmmmmmm wowo"
 
 app :: M.App St e Name
 app = M.App
