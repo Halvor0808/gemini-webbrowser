@@ -34,7 +34,7 @@ data Name = PageContent | SearchField
 data St =
   St { _focusRing :: F.FocusRing Name
      , _searchField :: E.Editor String Name
-     , _content :: String --[Line]
+     , _content :: [Line]
      } deriving (Show)
 makeLenses ''St
 
@@ -96,11 +96,20 @@ handleEvent ev = do
                 -> do 
                   sf <- use searchField
                   let query = concat $ E.getEditContents sf
-                  let result = query -- TODO: Use network to fetch content. Also: percent-encode query
+                  -- TODO: Use query and network to fetch content. Also: percent-encode query
+                  result <- liftIO temporaryFuncGetContentOfTestFile
                   T.modify (content .~ result)
                   return () 
               _ ->  zoom searchField $  E.handleEditorEvent ev
     Nothing -> return ()
+
+temporaryFuncGetContentOfTestFile :: IO [Line]
+-- TEMPORARY FUNCTION FOR TESTING PURPOSES: PLS REMOVE
+temporaryFuncGetContentOfTestFile = do
+  contents <- C8.readFile "app/Test/Input/response02-success.eg"
+  case parseOnly pResponse contents of
+    Left err -> return []
+    Right response -> return (_lines response)
 
 handleEventPageContent :: T.BrickEvent Name e -> EventM Name St ()
 handleEventPageContent ev@(T.VtyEvent (V.EvKey key [])) = 
