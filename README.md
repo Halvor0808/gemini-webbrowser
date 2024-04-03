@@ -1,6 +1,5 @@
 # Gemini Webbrowser
 
-
 # TODO
 - Protocol
   - Parsers
@@ -19,9 +18,12 @@
 - TUI - Brick
   - [x] Create a outline for TUI
   - [x] Basic Controls: quit, send request, exit, scrolling
-  - [ ] Displaying a gemini-page --raw
-  - Dynamic Padding: from min to a max value
+  - [x] Displaying a gemini-page --raw
   - [x] Search textfield (without fetching page)
+  - [ ] Dynamic Padding: from min to a max value
+  - [ ] Better difference between heading levels: indent underline (border) as well?
+  - [ ] Help page for controls (Ctrl-h)
+  - [ ] Handler preformatted lines being cut off. Allow horizontal scrolling?
 
 TUI Goal:
 Border                        Border
