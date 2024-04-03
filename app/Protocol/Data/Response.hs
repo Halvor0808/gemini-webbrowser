@@ -5,8 +5,6 @@ module Protocol.Data.Response (
   MIME, makeMime,
   Parameters(..),
   StatusCode(..), getStatusCode,
-  Prompt, 
-  FailureMessage,
 ) where
 
 import Data.ByteString ( ByteString)
@@ -16,14 +14,10 @@ import qualified Data.ByteString.Char8 as B
 import Protocol.Data.Gemtext (Line)
 import Protocol.Data.Request (Url)
 
-
-type Prompt = ByteString
-type FailureMessage = ByteString
-
-data Response = INPUT       StatusCode     Prompt
-              | SUCCESS     StatusCode     (Maybe MIME)      [Line]
-              | REDIRECT    StatusCode     Url
-              | ANY_FAIL    StatusCode     FailureMessage -- temporary replacement for error codes 40,50,60
+data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: ByteString}
+              | SUCCESS     {_statusCode :: StatusCode, _mime    :: Maybe MIME,  _lines :: [Line]}
+              | REDIRECT    {_statusCode :: StatusCode, _url     :: Url}
+              | ANY_FAIL    {_statusCode :: StatusCode, _failMsg :: ByteString} -- temporary replacement for error codes 40,50,60
               -- | TEMP_FAIL   StatusCode     FailureMessage
               -- | PERM_FAIL   StatusCode     FailureMessage
               -- | CLIENT_CERT StatusCode     FailureMessage
@@ -50,8 +44,10 @@ getStatusCode x y =
 
 type MainMimeType = ByteString
 type SubMimeType = ByteString
-data MIME = MIME MainMimeType SubMimeType (Maybe Parameters)
-    deriving (Eq)
+data MIME = MIME { _mainType   :: MainMimeType
+                 , _subType    ::  SubMimeType
+                 , _parameters ::  Maybe Parameters
+                 } deriving (Eq)
 
 makeMime :: Maybe (MainMimeType, SubMimeType) -> Maybe Parameters -> Maybe MIME
 makeMime Nothing        Nothing = Just $ MIME "text" "gemini" (Just $ Parameters [("charset", "utf-8")]) -- default to text/gemini
