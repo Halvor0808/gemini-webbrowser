@@ -1,16 +1,21 @@
 20 text/gemini;charset=utf-8;lang=en;hello=world
+# Header1
 Plain text line going on ... and on ...
 * item1
 * item2
 * item3
 
+## Header 2:
 => https://rainbow.vision.on Rainbow Land
 => gemini://myHome.page
 
+### Header 3
 ```preformat mode: on
 Preformatted text should be
 left to its own devices
+LongAssLineToTestBreakingLines:a123456789B123456789C123456789D123456789E123456889F123456789G123456789H123456789I123456789
 ``` preformat mode: off
 
 > Quote by ME
+> This is hard
 > Bye:)
