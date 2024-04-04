@@ -20,10 +20,11 @@
   - [x] Basic Controls: quit, send request, exit, scrolling
   - [x] Displaying a gemini-page --raw
   - [x] Search textfield (without fetching page)
+  - [x] Better difference between heading levels: indent underline (border) as well?
   - [ ] Dynamic Padding: from min to a max value
-  - [ ] Better difference between heading levels: indent underline (border) as well?
   - [ ] Help page for controls (Ctrl-h)
   - [ ] Handler preformatted lines being cut off. Allow horizontal scrolling?
+  - [ ] Handle navigating with links
 
 TUI Goal:
 Border                        Border

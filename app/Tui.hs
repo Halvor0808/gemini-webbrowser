@@ -12,9 +12,10 @@ import qualified Brick.Main as M
 import Brick.Widgets.Border.Style (unicode)
 import Brick.AttrMap (attrMap, AttrMap, attrName)
 import Brick.Types (Widget, EventM)
-import Brick.Widgets.Center (hCenter)
+import Brick.Widgets.Center (hCenter, center)
 import Brick.Widgets.Core
-import Brick.Util (on, fg)
+import Brick.Util ( on, fg, bg )
+import Brick (style)
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.Input.Events
@@ -39,51 +40,59 @@ data Name = PageContent | SearchField
   deriving (Ord, Eq, Show)
 
 data St =
-  St { _focusRing :: F.FocusRing Name
+  St { _focusRing   :: F.FocusRing Name
      , _searchField :: E.Editor String Name
-     , _content :: [Line]
+     , _content     :: [Line]
      } deriving (Show)
 makeLenses ''St
 
 drawUi :: St -> [Widget Name]
 drawUi st = [ui]
-    where
-      searchField  = B.border $ F.withFocusRing (_focusRing st)
-                                (E.renderEditor (str . unlines)) (_searchField st)
-      contentArea  = B.borderWithLabel (str "Content-separator")
-                     $ padTop (Pad 2) $ dynamicLeftRightPad 3
-                     $ viewport PageContent T.Vertical $ vBox $ map renderLine $ _content st
-      --
-      ui =
-        joinBorders $
-        withBorderStyle unicode $
-        B.borderWithLabel (str "GeminiBrowser") $
-        dynamicLeftRightPad 3 $
-        vBox [ hCenter $ padTopBottom 1 $ hLimit 30 searchField <=> str "Hit Enter to search"
-            , contentArea
-            , hCenter $ str "Not yet implemeted: Esc/Ctrl-q - quit, Ctrl-h - help"
-            ]
+  where
+    searchField = B.border $
+      F.withFocusRing (_focusRing st) (E.renderEditor (str . unlines)) (_searchField st)
+    contentArea = vBox
+      [ B.hBorderWithLabel (str "Page-content")
+      , padLeftRight 3 $ padTop (Pad 1) $
+        viewport PageContent T.Vertical (vBox . map renderLine $ _content st)
+      ]
+    ui = joinBorders $ withBorderStyle unicode $
+      B.borderWithLabel (str "GeminiBrowser") $
+      vBox
+        [ vLimitPercent 15 (hCenter (hLimit 65 searchField)
+            <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
+        , contentArea
+        , B.hBorder
+        , hCenter $ withAttr helpAttr $
+          str "Esc/Ctrl-q - quit, Ctrl-h - help (Not yet implemented)"
+        ]
 
 renderLine :: Line -> Widget Name
-renderLine (TextLine "")            = strWrap " "
-renderLine (TextLine t)             = strWrap $ unpack t
-renderLine (LinkLine t Nothing)     =
+renderLine (TextLine "") = strWrap " "
+renderLine (TextLine t) = strWrap $ unpack t
+renderLine (LinkLine t Nothing) =
   withAttr linkAttr $ hyperlink (Txt.pack $ unpack t) . strWrap $ unpack t
-renderLine (LinkLine t (Just s))    =
+renderLine (LinkLine t (Just s)) =
   withAttr linkAttr (hyperlink (Txt.pack $ unpack t) $ strWrap $ unpack s)
-renderLine (TogglePreformatMode t)  = withAttr preformatAttr (strWrap $ unpack t)
-renderLine (PreformattedTextLine t) = 
+renderLine (TogglePreformatMode "") = str ""
+renderLine (TogglePreformatMode t) =
+  withAttr preformatAttr (strWrap $ unpack t)
+renderLine (PreformattedTextLine t) =
   withAttr preformatAttr $ strWrapWith preSetting (unpack t)
-  -- Cuts off words longer than line. Mby horizontal viewport scrolling as well?
-  where preSetting = defaultWrapSettings {preserveIndentation = True , breakLongWords = False}
-renderLine (HeadingLine i t)        =
-  vBox [strWrap $ concat (replicate (i-1) "  ") <> unpack t, B.hBorder ]
-renderLine (UnorderedListLine t)    =
+  where
+    preSetting = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
+renderLine (HeadingLine i t) =
+  vBox [str "\n", indent <+> withAttr headingAttr (strWrap $ unpack t)]
+  where
+    indent = str $ concat (replicate (i - 1) "@ ")
+renderLine (UnorderedListLine t) =
   strWrapWith listSetting $ unpack t
-  where listSetting = defaultWrapSettings {fillStrategy = FillPrefix "  * ", fillScope = FillAll}
-renderLine (QuoteLine t)            =
+  where
+    listSetting = defaultWrapSettings { fillStrategy = FillPrefix "  * ", fillScope = FillAll }
+renderLine (QuoteLine t) =
   withAttr quoteAttr $ strWrapWith qSetting $ unpack t
-  where qSetting = defaultWrapSettings {fillStrategy = FillPrefix "  | ", fillScope = FillAll}
+  where
+    qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 
 
 dynamicLeftRightPad :: Int -> Widget n -> Widget n
@@ -93,6 +102,10 @@ handleEvent :: T.BrickEvent Name e -> EventM Name St ()
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return ()
 handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
+handleEvent (T.VtyEvent (V.EvKey V.KUp [])) = 
+  zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
+handleEvent (T.VtyEvent (V.EvKey V.KDown [])) =
+  zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
 handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = focusRing %= F.focusNext
 handleEvent (T.VtyEvent (V.EvKey V.KBackTab [])) = focusRing %= F.focusPrev
 handleEvent ev = do
@@ -120,11 +133,6 @@ temporaryFuncGetContentOfTestFile = do
     Right response -> return (_lines response)
 
 handleEventPageContent :: T.BrickEvent Name e -> EventM Name St ()
-handleEventPageContent ev@(T.VtyEvent (V.EvKey key [])) =
-  case key of
-    V.KUp    -> zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
-    V.KDown  -> zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
-    _        -> return ()
 handleEventPageContent _ = return ()
 
 
@@ -148,11 +156,16 @@ attrbMap =
   attrMap defAttr
     [ (linkAttr     , fg cyan)
     , (preformatAttr, fg brightBlack)
-    , (quoteAttr    , fg magenta)]
+    , (quoteAttr    , fg magenta)
+    , (helpAttr     , green `on` black)
+    , (headingAttr  , withStyle (style underline) bold )
+    ]
 
 linkAttr = attrName "link"
 preformatAttr = attrName "preformatted"
 quoteAttr = attrName "quote"
+helpAttr = attrName "help"
+headingAttr = attrName "heading"
 
 
 tuiRun :: IO St
