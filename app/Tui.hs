@@ -3,7 +3,6 @@
 
 module Tui (tuiRun) where
 
-
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Edit as E
 import qualified Brick.Focus as F
@@ -94,10 +93,6 @@ renderLine (QuoteLine t) =
   where
     qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 
-
-dynamicLeftRightPad :: Int -> Widget n -> Widget n
-dynamicLeftRightPad = padLeftRight
-
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return ()
@@ -171,4 +166,3 @@ headingAttr = attrName "heading"
 tuiRun :: IO St
 tuiRun = do
   M.defaultMain app initialState
-
