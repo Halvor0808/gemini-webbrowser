@@ -5,7 +5,7 @@ module Protocol.Parser.Gemtext
     runPLines, pLines
 ) where
 
-import Utils.ParseUtil (consumeRestOfLine)
+import Utils.ParseUtil (consumeRestOfLine, skipHorizontalSpace)
 import Protocol.Data.Gemtext ( Line(..) )
 import Data.Attoparsec.ByteString.Char8
     ( Parser, parseOnly, many1, char, isSpace, skipSpace, takeTill, option )
@@ -47,7 +47,7 @@ pLinkLine = do
 
 pTogglePreformatMode :: StateParser Line
 pTogglePreformatMode = do
-    altText <- lift $ "```" *> skipSpace *> consumeRestOfLine
+    altText <- lift $ "```" *> skipHorizontalSpace *> consumeRestOfLine
     bool <- get
     put (not bool)
     return $ TogglePreformatMode altText

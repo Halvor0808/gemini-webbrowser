@@ -5,10 +5,11 @@ module Utils.ParseUtil (
     pParameters,
     pManyAlphaDigit,
     isEOL,
+    skipHorizontalSpace,
 ) where
 
 import Data.Attoparsec.ByteString.Char8  
-  (Parser, takeTill, takeWhile1, endOfLine, char, many1)
+  (Parser, takeTill, takeWhile1, endOfLine, char, many1, skipWhile)
 import Data.ByteString (ByteString)
 import Protocol.Data.Response (Parameters(..))
 
@@ -18,6 +19,9 @@ consumeRestOfLine = takeTill isEOL <* endOfLine
 
 isEOL :: Char -> Bool
 isEOL c = c == '\n' || c == '\r'
+
+skipHorizontalSpace :: Parser ()
+skipHorizontalSpace = skipWhile (`elem` [' ', '\t'])
 
 pParameters :: Char -> Char -> Parser Parameters
 pParameters separator assigner = Parameters <$> many1 pParam
