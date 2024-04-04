@@ -24,22 +24,22 @@
   - [ ] Help page for controls (Ctrl-h)
   - [ ] Handler preformatted lines being cut off. Allow horizontal scrolling?
   - [ ] Handle navigating with links
+  - [ ] Allow page/navigation history
 
 TUI Goal:
-Border                        Border
------------Gemini-Browser-----------
-|   |         Searchbar        |   |
-------------------------------------
-|   |                          |   |
-|   |                          |   |
-|   |                          |   |
-|   |      Page contents       |   |
-|   |                          |   |
-|   |                          |   |
-|   |                          |   |
-------------------------------------
-|   |      basic help          |   |
-------------------------------------
+|-----------Gemini-Browser----------|
+|             Searchbar             |
+|-----------------------------------|
+|                                   |
+|                                   |
+|                                   |
+|          Page contents            |
+|                                   |
+|                                   |
+|                                   |
+|-----------------------------------|
+|          basic help               |
+|-----------------------------------|
 
 
 # Notes
