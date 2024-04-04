@@ -16,6 +16,11 @@ left to its own devices
 LongAssLineToTestBreakingLines:a123456789B123456789C123456789D123456789E123456889F123456789G123456789H123456789I123456789
 ``` preformat mode: off
 
+```unicode blob
+     ...
+  ..    ..
+ ...........
+```
 > Quote by ME
 > This is hard
 > Bye:)
