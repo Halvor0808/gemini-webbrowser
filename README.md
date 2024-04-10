@@ -71,6 +71,19 @@ Sending an absolute URL instead of only a path or selector is effectively equiva
 
 Clients MUST NOT send anything after the first occurrence of <CR><LF> in a request, and servers MUST ignore anything sent after the first occurrence of a <CR><LF>
 
+## TLS
+Use of TLS for Gemini transactions is mandatory.
+Use of the Server Name Indication (SNI) extension to TLS is also mandatory, to facilitate name-based virtual hosting.
+As per RFCs 5246 and 8446, Gemini servers MUST send a TLS `close_notify` prior to closing the connection after sending a complete response. This is essential to disambiguate completed responses from responses closed prematurely due to network error or attack.
+
+Clients can validate TLS connections however they like (including not at all) but the strongly RECOMMENDED approach is to implement a lightweight "TOFU" certificate-pinning system which treats self-signed certificates as first- class citizens.
+
+TOFU stands for "Trust On First Use" and is public-key security model similar to that used by OpenSSH. The first time a Gemini client connects to a server, it accepts whatever certificate it is presented. That certificate's fingerprint and expiry date are saved in a persistent database (like the .known_hosts file for SSH), associated with the server's hostname. On all subsequent connections to that hostname, the received certificate's fingerprint is computed and compared to the one in the database. If the certificate is not the one previously received, but the previous certificate's expiry date has not passed, the user is shown a warning, analogous to the one web browser users are shown when receiving a certificate without a signature chain leading to a trusted CA.
+
+Gemini requests will typically be made without a client certificate. If a requested resource requires a client certificate and one is not included in a request, the server can respond with a status code of 60, 61 or 62.
+
+
+
 # Notes
 
 ## Response
