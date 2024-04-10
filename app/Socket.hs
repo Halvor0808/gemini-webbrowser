@@ -1,34 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
--- Echo client program
-module Main (main) where
+
+module Socket (runConnection) where
 
 import qualified Control.Exception as E
 import qualified Data.ByteString.Char8 as C
-import Network.Socket
-import Network.Socket.ByteString (recv, sendAll)
+import Network.Simple.TCP.TLS
+import Data.ByteString.Char8 (pack, unpack)
 
+runConnection :: IO ()
+runConnection = do
+  params <- newDefaultClientParams ("geminiprotocol.net", ":1965")
+  putStrLn $ show params
+  connect params "geminiprotocol.net" "1965" $ \(context, sockAddr) -> do
+    putStrLn "Connection established"
+    send context "gemini://geminiprotocol.net/\r\n"
+    msg <- recv context
+    case msg of
+      Nothing  -> putStrLn "Connection closed"
+      (Just m) -> putStrLn (unpack m) 
+  
+{- TODO
+ - Only support TLS 1.2 & 1.3 
+ - clientSupported = Supported {supportedVersions = [TLS1.3,TLS1.2]}
+ -
 
-
-{-
-Socket programming 
-https://hackage.haskell.org/package/network-3.1.1.1/docs/Network-Socket.html#v:AI_NUMERICHOST
-
-
-Network types:
-type HostName = String
-  Either a host name e.g., "haskell.org" or a numeric host address string consisting of a dotted decimal IPv4 address or an IPv6 address e.g., "192.168.0.1".
-
-type ServiceName = String
-  Either a service name e.g., "http" or a numeric port number.
-
-data AddrInfo
-  Constructors - AddrInfo:
-
-    addrFlags :: [AddrInfoFlag] 
-    addrFamily :: Family 
-    addrSocketType :: SocketType 
-    addrProtocol :: ProtocolNumber 
-    addrAddress :: SockAddr 
-    addrCanonName :: Maybe String 
-
--}
+ -}
