@@ -36,8 +36,7 @@ executable gemini-browser
         microlens,
         microlens-th,
         microlens-mtl,
-        network,
-        network-simple,
+        network-simple-tls,
     
     other-modules:
         Protocol.Data.Response,
@@ -50,6 +49,7 @@ executable gemini-browser
 
         Homepage,
         Tui, 
+        Socket, 
 
         Utils.ParseUtil,
         
