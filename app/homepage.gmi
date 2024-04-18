@@ -1,0 +1,5 @@
+# Gemini Web Browser -- Home Page
+
+## Useful Links
+=> gemini://geminiprotocol.net/ Gemini Protocol's homepage.
+=> gemini://kennedy.gemi.dev Kennedy Search Engine
