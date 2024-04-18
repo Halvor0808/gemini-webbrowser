@@ -1,27 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
-
-module Socket (runConnection) where
+{-# LANGUAGE LambdaCase #-}
+module Socket ( retrievePage ) where
 
 import qualified Control.Exception as E
 import qualified Data.ByteString.Char8 as C
+
 import Network.Simple.TCP.TLS
-import Data.ByteString.Char8 (pack, unpack)
+import Network.TLS
+import Control.Monad.IO.Class (liftIO)
+import Protocol.Data.Request (Url, authority, path)
 
-runConnection :: IO ()
-runConnection = do
-  params <- newDefaultClientParams ("geminiprotocol.net", ":1965")
-  putStrLn $ show params
-  connect params "geminiprotocol.net" "1965" $ \(context, sockAddr) -> do
-    putStrLn "Connection established"
-    send context "gemini://geminiprotocol.net/\r\n"
-    msg <- recv context
-    case msg of
-      Nothing  -> putStrLn "Connection closed"
-      (Just m) -> putStrLn (unpack m) 
-  
-{- TODO
- - Only support TLS 1.2 & 1.3 
- - clientSupported = Supported {supportedVersions = [TLS1.3,TLS1.2]}
- -
 
- -}
+addCallback :: ClientParams -> ClientParams
+addCallback params = params { clientHooks = modi $ clientHooks params }
+  where modi :: ClientHooks -> ClientHooks
+        modi ch = ch { onServerCertificate = valCer }
+        valCer _ _ _ _ = return []
+
+retrievePage :: Url -> IO C.ByteString
+retrievePage url = do
+  let host = C.unpack $ authority url
+      urlPath = path url
+  params <- addCallback <$> newDefaultClientParams (host, ":1965")
+  connect params host "1965" $ \(ctx,_) -> do
+    send ctx ("gemini://" <> C.pack host <> urlPath <> "\r\n")
+    --
+    -- recv ctx >>= \case
+    --   Nothing -> return mempty
+    --   Just chunk -> return chunk
+    recvAll ctx
+    where recvAll ctx = do
+            recv ctx >>= \case
+              Nothing -> return mempty
+              Just chunk -> (chunk <>) <$> recvAll ctx

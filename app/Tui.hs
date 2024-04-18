@@ -17,7 +17,6 @@ import Brick.Util ( on, fg, bg )
 import Brick (style)
 
 import Graphics.Vty.Attributes
-import Graphics.Vty.Input.Events
 import qualified Graphics.Vty as V
 
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
@@ -33,6 +32,11 @@ import Protocol.Data.Gemtext (Line(..))
 import Protocol.Parser.Response (pResponse)
 import qualified Data.ByteString.Char8 as C8
 import Protocol.Data.Response
+import Socket (retrievePage)
+import Protocol.Data.Request (Url(..))
+import Protocol.Parser.Request
+import Homepage (getHomePage)
+import GHC.TypeError (ErrorMessage(Text))
 
 
 data Name = PageContent | SearchField
@@ -59,7 +63,7 @@ drawUi st = [ui]
       B.borderWithLabel (str "GeminiBrowser") $
       vBox
         [ vLimitPercent 15 (hCenter (hLimit 65 searchField)
-            <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
+        <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
         , contentArea
         , B.hBorder
         , hCenter $ withAttr helpAttr $
@@ -97,12 +101,10 @@ handleEvent :: T.BrickEvent Name e -> EventM Name St ()
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return ()
 handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
-handleEvent (T.VtyEvent (V.EvKey V.KUp [])) = 
+handleEvent (T.VtyEvent (V.EvKey V.KUp [])) =
   zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
 handleEvent (T.VtyEvent (V.EvKey V.KDown [])) =
   zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
-handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = focusRing %= F.focusNext
-handleEvent (T.VtyEvent (V.EvKey V.KBackTab [])) = focusRing %= F.focusPrev
 handleEvent ev = do
   r <- use focusRing
   case F.focusGetCurrent r of
@@ -112,24 +114,41 @@ handleEvent ev = do
                 -> do
                   sf <- use searchField
                   let query = concat $ E.getEditContents sf
-                  -- TODO: Use query and network to fetch content. Also: percent-encode query
-                  result <- liftIO temporaryFuncGetContentOfTestFile
-                  T.modify (content .~ result)
-                  return ()
+                  if query == "home" then startEvent 
+                  else
+                    case getUrl query of
+                      Left e -> do 
+                        T.modify (content .~ [TextLine (pack e)])
+                      Right url -> do
+                        -- Why won't this line execute?
+                        T.modify (content .~ [TextLine $ "Fetching " <> pack (show url)  <> " ..."])
+                        response <- liftIO $ getResponse url
+                        T.modify (content .~ response)
               _ ->  zoom searchField $  E.handleEditorEvent ev
     Nothing -> return ()
-
-temporaryFuncGetContentOfTestFile :: IO [Line]
--- TEMPORARY FUNCTION FOR TESTING PURPOSES: PLS REMOVE
-temporaryFuncGetContentOfTestFile = do
-  contents <- C8.readFile "app/Test/Input/response02-success.eg"
-  case parseOnly pResponse contents of
-    Left err -> return []
-    Right response -> return (_lines response)
 
 handleEventPageContent :: T.BrickEvent Name e -> EventM Name St ()
 handleEventPageContent _ = return ()
 
+getUrl :: String -> Either String Url
+getUrl query = do
+  case parseOnly pUrl (pack query) of
+    Left err -> Left $ "invalid url parse:" <> err
+    Right url -> return url
+
+getResponse :: Url -> IO [Line]
+getResponse url = do
+  response <- retrievePage url
+  case parseOnly pResponse response of
+    Left err -> do
+      return [TextLine $ "invalid response?: " <> pack err <> " :\n" <> pack (show response)]
+    Right response ->
+      case response of
+        INPUT _ _ -> return [TextLine "Input response"]
+        SUCCESS _ _ lines -> return lines
+        REDIRECT _ newUrl -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
+        ANY_FAIL code failMsg -> return [
+          TextLine $ "Failed response: " <> pack (show code) <>" :"<> failMsg]
 
 initialState :: St
 initialState =
@@ -142,9 +161,15 @@ app = M.App
         { M.appDraw = drawUi
         , M.appChooseCursor = M.showFirstCursor
         , M.appHandleEvent = handleEvent
-        , M.appStartEvent = return ()
+        , M.appStartEvent = startEvent
         , M.appAttrMap = const attrbMap
         }
+
+startEvent :: EventM Name St ()
+startEvent = do
+    result <- liftIO getHomePage
+    T.modify (content .~ result)
+    return ()
 
 attrbMap :: AttrMap
 attrbMap =
