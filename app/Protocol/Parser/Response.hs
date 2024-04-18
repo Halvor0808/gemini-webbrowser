@@ -24,7 +24,7 @@ pResponse = do
   code <- pStatusCode <* char ' '
   case code of
     (InputCode   _ _) -> INPUT    code <$> consumeRestOfLine
-    (SuccessCode _ _) -> SUCCESS  code <$> pMime <* endOfLine <*> evalStateT pLines False
+    (SuccessCode _ _) -> SUCCESS  code <$> (pMime <* endOfLine) <*> evalStateT pLines False
     (RedirCode   _ _) -> REDIRECT code <$> pUrl <* endOfLine
     _                 -> ANY_FAIL code <$> consumeRestOfLine -- common case for fails & cetrificate requests
 --    (TempFailCode _ _) -> TEMP_FAIL code <$> consumeRestOfLine

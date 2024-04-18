@@ -29,7 +29,15 @@ data StatusCode = InputCode              Int Int
                 | TempFailCode           Int Int
                 | PermanentFailCode      Int Int
                 | RequireCertificateCode Int Int
-                deriving(Eq, Show)
+                deriving(Eq)
+                
+instance Show StatusCode where
+  show (InputCode x y)              = show x ++ show y
+  show (SuccessCode x y)            = show x ++ show y
+  show (RedirCode x y)              = show x ++ show y
+  show (TempFailCode x y)           = show x ++ show y
+  show (PermanentFailCode x y)      = show x ++ show y
+  show (RequireCertificateCode x y) = show x ++ show y
 
 getStatusCode :: Int -> Int -> StatusCode
 getStatusCode x y =
