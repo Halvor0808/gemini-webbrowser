@@ -17,8 +17,8 @@ main = do
 
 tests :: IO ()
 tests = do
+  putStrLn " --- /// Running tests /// --- \n"
   testResponse
-  putStrLn "----- Request: -----"
   testRequest
 
 

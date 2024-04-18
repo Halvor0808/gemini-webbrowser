@@ -11,14 +11,15 @@ import Protocol.Parser.Request
 
 testRequest :: IO ()
 testRequest = do 
+  putStrLn "----- Request: -----"
   testUrl
   testPath
 
 testUrl :: IO ()
 testUrl = do
   putStrLn "----- Url: -----"
-  badParseTest pUrl "https://geminiprotocol.net" -- success
-  badParseTest pUrl "gemini://geminiprotocol.net" -- fail
+  badParseTest pUrl "https://geminiprotocol.net/" -- success
+  badParseTest pUrl "gemini://geminiprotocol.net" -- success
 
 testPath :: IO ()
 testPath = do
