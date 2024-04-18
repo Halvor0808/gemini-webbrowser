@@ -4,7 +4,7 @@
 - Protocol
   - Parsers
     - General
-      - [ ] Deal with use of `consumeRestOfLine` Bug: used on all gemtext lines, but will fail if there isnot a line break, but end of input instead
+      - [ ] Deal with use of `consumeRestOfLine` Bug: used on all gemtext lines, but will fail if there is not a line break, but end of input instead
       - [ ] Rewrite tests using `compareResults`
       - [ ] Better fail messages -- using `fail`?
     - Request
@@ -22,11 +22,12 @@
   - [x] Search textfield (without fetching page)
   - [x] Better difference between heading levels: indent underline (border) as well?
   - [ ] Help page for controls (Ctrl-h)
-  - [ ] Handler preformatted lines being cut off. Allow horizontal scrolling?
+  - [ ] Handler preformatted lines being cut off.
   - [ ] Handle navigating with links
   - [ ] Allow page/navigation history
 
 TUI Goal:
+```
 |-----------Gemini-Browser----------|
 |             Searchbar             |
 |-----------------------------------|
@@ -40,49 +41,7 @@ TUI Goal:
 |-----------------------------------|
 |            basic help             |
 |-----------------------------------|
-
-
-# Network - TCP & TLS
-## TCP connection
-C: Opens connection
-S: Accepts connection
-C/S: Complete TLS handshake (see section 4)
-C: Validates server certificate (see 4.2)
-C: Sends request (one CRLF terminated line) (see section 2)
-S: Sends response header (one CRLF terminated line), closes connection under non-success conditions (see 3.1 and 3.2)
-S: Sends response body (text or binary data) (see 3.3)
-S: Closes connection (including TLS close_notify, see section 4)
-C: Handles response (see 3.4)
-
-## URI scheme
-Mostly follows RFC 3986.
-The port subcomponent is optional, with a default value of 1965.
-An empty path is equivalent to a path consisting only of "/". Spaces in paths should be encoded as %20, not as +.
-Clients SHOULD normalise URIs (as per section 6.2.3 of RFC 3986) before sending requests (see section 2) and servers SHOULD normalise received URIs before processing a request.
-
-## Gemini Requests
-Gemini requests are a single CRLF-terminated line with the following structure:
-
-`<URL><CR><LF>`
-
-<URL> is a UTF-8 encoded absolute URL, including a scheme, of maximum length 1024 bytes. The request MUST NOT begin with a U+FEFF byte order mark.
-
-Sending an absolute URL instead of only a path or selector is effectively equivalent to building in a HTTP "Host" header. It permits virtual hosting of multiple Gemini domains on the same IP address. It also allows servers to optionally act as proxies. Including schemes other than "gemini" in requests allows servers to optionally act as protocol-translating gateways to e.g. fetch gopher resources over Gemini. Proxying is optional and the vast majority of servers are expected to only respond to requests for resources at their own domain(s).
-
-Clients MUST NOT send anything after the first occurrence of <CR><LF> in a request, and servers MUST ignore anything sent after the first occurrence of a <CR><LF>
-
-## TLS
-Use of TLS for Gemini transactions is mandatory.
-Use of the Server Name Indication (SNI) extension to TLS is also mandatory, to facilitate name-based virtual hosting.
-As per RFCs 5246 and 8446, Gemini servers MUST send a TLS `close_notify` prior to closing the connection after sending a complete response. This is essential to disambiguate completed responses from responses closed prematurely due to network error or attack.
-
-Clients can validate TLS connections however they like (including not at all) but the strongly RECOMMENDED approach is to implement a lightweight "TOFU" certificate-pinning system which treats self-signed certificates as first- class citizens.
-
-TOFU stands for "Trust On First Use" and is public-key security model similar to that used by OpenSSH. The first time a Gemini client connects to a server, it accepts whatever certificate it is presented. That certificate's fingerprint and expiry date are saved in a persistent database (like the .known_hosts file for SSH), associated with the server's hostname. On all subsequent connections to that hostname, the received certificate's fingerprint is computed and compared to the one in the database. If the certificate is not the one previously received, but the previous certificate's expiry date has not passed, the user is shown a warning, analogous to the one web browser users are shown when receiving a certificate without a signature chain leading to a trusted CA.
-
-Gemini requests will typically be made without a client certificate. If a requested resource requires a client certificate and one is not included in a request, the server can respond with a status code of 60, 61 or 62.
-
-
+```
 
 # Notes
 
