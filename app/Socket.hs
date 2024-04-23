@@ -23,13 +23,10 @@ retrievePage url = do
       urlPath = path url
   params <- addCallback <$> newDefaultClientParams (host, ":1965")
   connect params host "1965" $ \(ctx,_) -> do
-    send ctx ("gemini://" <> C.pack host <> urlPath <> "\r\n")
-    --
-    -- recv ctx >>= \case
-    --   Nothing -> return mempty
-    --   Just chunk -> return chunk
+    send ctx ("gemini://" <> C.pack host <> urlPath <> "\r\n") 
     recvAll ctx
-    where recvAll ctx = do
-            recv ctx >>= \case
-              Nothing -> return mempty
-              Just chunk -> (chunk <>) <$> recvAll ctx
+  where 
+    recvAll ctx = do
+      recv ctx >>= \case
+        Nothing -> return mempty
+        Just chunk -> (chunk <>) <$> recvAll ctx
