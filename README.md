@@ -3,6 +3,7 @@
 # Questions -- I need help
 
 - [ ]  `pGeminiUrl` -- I need to accept `gemini://`, and when no protocol is mentioned. But fail otherwise. How.
+- [ ]  When rendering pages, the border is choppy?
 
 
 
