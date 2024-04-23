@@ -62,7 +62,7 @@ testResponseParser = do
   C8.readFile "app/Test/Input/response02-success.eg" >>= badParseTest pResponse -- works
   badParseTest pResponse "30 gemini://new.url.visit.to/\r\n" -- works
   badParseTest pResponse "30 gemini://new.url.visit.to/" -- Fails: missing EOL
-  badParseTest pResponse "30 gemini://missing.forward.slash\r\n" -- works: Does it recover the '/'?
+  badParseTest pResponse "30 gemini://missing.forward.slash\r\n" -- works: Recovers missing /
   badParseTest pResponse "40 Error message for 40\r\n" -- works
   badParseTest pResponse "50 Error message for 50\r\n" -- works
   badParseTest pResponse "60 You need a ceritificate my man\r\n" -- works
