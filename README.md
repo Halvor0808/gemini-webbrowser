@@ -3,7 +3,8 @@
 # Questions -- I need help
 
 - [ ]  `pGeminiUrl` -- I need to accept `gemini://`, and when no protocol is mentioned. But fail otherwise. How.
-- [ ]  When rendering pages, the border is choppy?
+- [ ]  When rendering pages, the border is choppy
+- [ ]  Encoding in brick. Encoding of emojis are all wrong
 
 
 
