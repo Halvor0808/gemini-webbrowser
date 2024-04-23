@@ -48,7 +48,7 @@ executable gemini-browser
         Protocol.Parser.Request,
         Protocol.Parser.Gemtext,
 
-        Homepage,
+        Pages,
         Tui, 
         Socket,
 
