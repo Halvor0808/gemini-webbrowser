@@ -132,7 +132,7 @@ handleEventPageContent _ = return ()
 
 getUrl :: String -> Either String Url
 getUrl query = do
-  case parseOnly pUrl (pack query) of
+  case parseOnly pGeminiUrl (pack query) of
     Left err -> Left $ "invalid url parse:" <> err
     Right url -> return url
 

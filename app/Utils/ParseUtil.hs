@@ -6,6 +6,7 @@ module Utils.ParseUtil (
     pManyAlphaDigit,
     isEOL,
     skipHorizontalSpace,
+    isAlphaDigit,
 ) where
 
 import Data.Attoparsec.ByteString.Char8  
@@ -34,10 +35,10 @@ pParameters separator assigner = Parameters <$> many1 pParam
       isParameterChar = (`elem` (alpha ++ nums ++ "-._~"))
 
 pManyAlphaDigit :: Parser ByteString
-pManyAlphaDigit = takeWhile1 isSimpleAlphabet
+pManyAlphaDigit = takeWhile1 isAlphaDigit
 
-isSimpleAlphabet :: Char -> Bool
-isSimpleAlphabet c = c `elem` (alpha ++ nums)
+isAlphaDigit :: Char -> Bool
+isAlphaDigit c = c `elem` (alpha ++ nums)
 
 alpha, nums :: [Char]
 alpha = ['a'..'z' ] ++ ['A'..'Z']
