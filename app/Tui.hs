@@ -52,23 +52,25 @@ makeLenses ''St
 drawUi :: St -> [Widget Name]
 drawUi st = [ui]
   where
-    searchField = B.border $
-      F.withFocusRing (_focusRing st) (E.renderEditor (str . unlines)) (_searchField st)
+    ui = joinBorders $ withBorderStyle unicode $
+      B.borderWithLabel (str "GeminiBrowser") $
+      vBox [ searchFieldArea
+           , contentArea
+           , B.hBorder
+           , bottomText
+           ]
+    searchField = B.border $ F.withFocusRing 
+      (_focusRing st) (E.renderEditor (str . unlines)) (_searchField st)
     contentArea = vBox
       [ B.hBorderWithLabel (str "Page-content")
       , padLeftRight 3 $ padTop (Pad 1) $
         viewport PageContent T.Vertical (vBox . map renderLine $ _content st)
       ]
-    ui = joinBorders $ withBorderStyle unicode $
-      B.borderWithLabel (str "GeminiBrowser") $
-      vBox
-        [ vLimitPercent 15 (hCenter (hLimit 65 searchField)
-        <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
-        , contentArea
-        , B.hBorder
-        , hCenter $ withAttr helpAttr $
-          str "Esc/Ctrl-q - quit, Ctrl-h - help (Not yet implemented)"
-        ]
+    searchFieldArea = vLimitPercent 15 (hCenter (hLimit 65 searchField)
+                   <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
+    bottomText = hCenter $ withAttr helpAttr $
+             str "Esc/Ctrl-q - quit, Ctrl-h - help (Not yet implemented)"
+             
 
 renderLine :: Line -> Widget Name
 renderLine (TextLine "") = strWrap " "
