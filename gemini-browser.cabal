@@ -36,6 +36,7 @@ executable gemini-browser
         microlens,
         microlens-th,
         microlens-mtl,
+        vector,
         tls,
         network-simple-tls,
     
