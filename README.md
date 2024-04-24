@@ -30,10 +30,11 @@
   - [x] Search textfield (without fetching page)
   - [x] Better difference between heading levels: indent underline (border) as well?
   - [x] Help page for controls (Ctrl-e)
-  - [ ] Resolve relative URLs
-  - [ ] Handler preformatted lines being cut off.
+  - [ ] Handle preformatted lines being cut off.
   - [ ] Handle navigating with links
-  - [ ] Allow page/navigation history
+    - [x] Cursor and navigating with keyboard
+    - [ ] Resolving relative URLs
+  - [ ] Allow history, and history navigation
 
 TUI Goal:
 ```
@@ -51,3 +52,7 @@ TUI Goal:
 |            basic help             |
 |-----------------------------------|
 ```
+
+# Known issues
+- TLS implementation does not work on windows for some servers
+- Emojis and other "wide" charcaters are not well supported in Brick. Requires workaround in Vty. Which is outside the scope of "I can be bothered".
