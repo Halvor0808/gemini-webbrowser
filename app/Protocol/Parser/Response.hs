@@ -16,7 +16,7 @@ import Protocol.Data.Response
       makeMime )
 import Protocol.Parser.Gemtext
 import Utils.ParseUtil (pParameters, pManyAlphaDigit, consumeRestOfLine)
-import Protocol.Parser.Request (pUrl)
+import Protocol.Parser.Request (pUrl, pGeminiUrl)
 
 
 pResponse :: Parser Response
@@ -25,7 +25,7 @@ pResponse = do
   case code of
     (InputCode   _ _) -> INPUT    code <$> consumeRestOfLine
     (SuccessCode _ _) -> SUCCESS  code <$> (pMime <* endOfLine) <*> evalStateT pLines False
-    (RedirCode   _ _) -> REDIRECT code <$> pUrl <* endOfLine
+    (RedirCode   _ _) -> REDIRECT code <$> pGeminiUrl <* endOfLine
     _                 -> ANY_FAIL code <$> consumeRestOfLine -- common case for fails & cetrificate requests
 --    (TempFailCode _ _) -> TEMP_FAIL code <$> consumeRestOfLine
 --    (PermanenetFailCode _ _) -> PERM_FAIL code <$> consumeRestOfLine
@@ -49,4 +49,4 @@ pStatusCode = do
   dig2 <- digitToInt <$> digit
   case (dig1, dig2) of
     (d1, d2) | d1 > 0 && d1 <= 6 -> return $ getStatusCode d1 d2
-    _ -> fail "Invalid status code"
+    _                            -> fail "Invalid status code"
