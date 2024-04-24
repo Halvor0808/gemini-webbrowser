@@ -19,7 +19,9 @@ testUrl :: IO ()
 testUrl = do
   putStrLn "----- Url: -----"
   badParseTest pUrl "https://geminiprotocol.net/" -- success
-  badParseTest pUrl "gemini://geminiprotocol.net" -- success
+  badParseTest pUrl "gemini://geminiprotocol.net" -- success, recovers trailing "/"
+  badParseTest pUrl "gemini://geminiprotocol.net/path/to/file" -- success, recover trailing "/"
+  badParseTest pUrl "gemini://geminiprotocol.net/errPath//" -- Fail, double "/"
 
 testPath :: IO ()
 testPath = do
@@ -28,6 +30,6 @@ testPath = do
   badParseTest pPath "/path/" -- /path/
   badParseTest pPath "/" -- /
   badParseTest pPath "//" -- / (with "/" in leftover input)
-  badParseTest pPath "" -- Fails
+  badParseTest pPath "" -- Suceeds because of fail safety
   badParseTest pPath "path" -- Fails
   badParseTest pPath "path/" -- Fails
