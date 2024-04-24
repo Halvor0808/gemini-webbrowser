@@ -9,11 +9,9 @@ module Utils.ParseUtil (
     isAlphaDigit,
 ) where
 
-import Data.Attoparsec.ByteString.Char8  
-  (Parser, takeTill, takeWhile1, endOfLine, char, many1, skipWhile)
-import Data.ByteString (ByteString)
 import Protocol.Data.Response (Parameters(..))
-
+import Data.Attoparsec.ByteString.Char8
+import Data.ByteString (ByteString)
 
 consumeRestOfLine :: Parser ByteString
 consumeRestOfLine = takeTill isEOL <* endOfLine
