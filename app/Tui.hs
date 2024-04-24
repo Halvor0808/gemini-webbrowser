@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE TemplateHaskell #-}
 
 module Tui (tuiRun) where
@@ -35,11 +35,11 @@ import Protocol.Data.Response
 import Socket (retrievePage)
 import Protocol.Data.Request (Url(..))
 import Protocol.Parser.Request
-import Homepage (getHomePage)
+import Pages
 import GHC.TypeError (ErrorMessage(Text))
 
 
-data Name = PageContent | SearchField
+data Name =  PageContent | SearchField | HelpPage
   deriving (Ord, Eq, Show)
 
 data St =
@@ -50,7 +50,11 @@ data St =
 makeLenses ''St
 
 drawUi :: St -> [Widget Name]
-drawUi st = [ui]
+drawUi st = do 
+  case F.focusGetCurrent (_focusRing st) of
+    Just SearchField -> [ui]
+    Just HelpPage    -> helpPage
+    Nothing          -> return emptyWidget
   where
     ui = joinBorders $ withBorderStyle unicode $
       B.borderWithLabel (str "GeminiBrowser") $
@@ -69,11 +73,12 @@ drawUi st = [ui]
     searchFieldArea = vLimitPercent 15 (hCenter (hLimit 65 searchField)
                    <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
     bottomText = hCenter $ withAttr helpAttr $
-             str "Esc/Ctrl-q - quit, Ctrl-h - help (Not yet implemented)"
+             str "Esc/Ctrl-q = quit, Ctrl-e = toggle help"
+    helpPage = [viewport HelpPage T.Vertical $ str getHelpPage]
              
 
 renderLine :: Line -> Widget Name
-renderLine (TextLine "") = strWrap " "
+renderLine (TextLine "") = str " "
 renderLine (TextLine t) = strWrap $ unpack t
 renderLine (LinkLine t Nothing) =
   withAttr linkAttr $ hyperlink (Txt.pack $ unpack t) . strWrap $ unpack t
@@ -88,8 +93,7 @@ renderLine (PreformattedTextLine t) =
     preSetting = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
 renderLine (HeadingLine i t) =
   vBox [str "\n", indent <+> withAttr headingAttr (strWrap $ unpack t)]
-  where
-    indent = str $ concat (replicate (i - 1) "@ ")
+  where indent = str $ concat (replicate (i - 1) "@ ")
 renderLine (UnorderedListLine t) =
   strWrapWith listSetting $ unpack t
   where
@@ -101,7 +105,12 @@ renderLine (QuoteLine t) =
 
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'h') [V.MCtrl])) = return ()
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = do 
+  r <- use focusRing
+  case F.focusGetCurrent r of
+    Just HelpPage -> focusRing    %= F.focusSetCurrent SearchField
+    Just SearchField -> focusRing %= F.focusSetCurrent HelpPage
+    Just _ -> return ()
 handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
 handleEvent (T.VtyEvent (V.EvKey V.KUp [])) =
   zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
@@ -110,7 +119,6 @@ handleEvent (T.VtyEvent (V.EvKey V.KDown [])) =
 handleEvent ev = do
   r <- use focusRing
   case F.focusGetCurrent r of
-    Just PageContent -> handleEventPageContent ev
     Just SearchField ->  case ev of
               (T.VtyEvent (V.EvKey V.KEnter []))
                 -> do
@@ -119,18 +127,14 @@ handleEvent ev = do
                   if query == "home" then startEvent 
                   else
                     case getUrl query of
-                      Left e -> do 
-                        T.modify (content .~ [TextLine (pack e)])
+                      Left e -> T.modify (content .~ [TextLine (pack e)])
                       Right url -> do
                         -- Why won't this line execute?
                         T.modify (content .~ [TextLine $ "Fetching " <> pack (show url)  <> " ..."])
                         response <- liftIO $ getResponse url
                         T.modify (content .~ response)
               _ ->  zoom searchField $  E.handleEditorEvent ev
-    Nothing -> return ()
-
-handleEventPageContent :: T.BrickEvent Name e -> EventM Name St ()
-handleEventPageContent _ = return ()
+    _ -> return ()
 
 getUrl :: String -> Either String Url
 getUrl query = do
@@ -146,15 +150,15 @@ getResponse url = do
       return [TextLine $ "invalid response?: " <> pack err <> " :\n" <> pack (show response)]
     Right response ->
       case response of
-        INPUT _ _ -> return [TextLine "Input response"]
-        SUCCESS _ _ lines -> return lines
-        REDIRECT _ newUrl -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
+        INPUT _ _             -> return [TextLine "Input response"]
+        SUCCESS _ _ lines     -> return lines
+        REDIRECT _ newUrl     -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
         ANY_FAIL code failMsg -> return [
           TextLine $ "Failed response: " <> pack (show code) <>" :"<> failMsg]
 
 initialState :: St
 initialState =
-  St (F.focusRing [SearchField, PageContent])
+  St (F.focusRing [SearchField, HelpPage])
      (E.editor SearchField (Just 1) "")
      []
 
@@ -169,7 +173,7 @@ app = M.App
 
 startEvent :: EventM Name St ()
 startEvent = do
-    result <- liftIO getHomePage
+    result <- liftIO getTestPage
     T.modify (content .~ result)
     return ()
 
