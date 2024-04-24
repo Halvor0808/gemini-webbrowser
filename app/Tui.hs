@@ -1,15 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-} 
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Tui (tuiRun) where
 
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Edit as E
+import qualified Brick.Widgets.List as L
 import qualified Brick.Focus as F
 import qualified Brick.Types as T
 import qualified Brick.Main as M
 import Brick.Widgets.Border.Style (unicode)
-import Brick.AttrMap (attrMap, AttrMap, attrName)
+import Brick.AttrMap (attrMap, AttrMap, attrName, AttrName)
 import Brick.Types (Widget, EventM)
 import Brick.Widgets.Center (hCenter, center)
 import Brick.Widgets.Core
@@ -27,6 +28,7 @@ import Text.Wrap
 import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Lens.Micro
+import qualified Data.Vector as Vec
 
 import Protocol.Data.Gemtext (Line(..))
 import Protocol.Parser.Response (pResponse)
@@ -36,25 +38,23 @@ import Socket (retrievePage)
 import Protocol.Data.Request (Url(..))
 import Protocol.Parser.Request
 import Pages
-import GHC.TypeError (ErrorMessage(Text))
 
 
-data Name =  PageContent | SearchField | HelpPage
+data Name =  PageContent | ListContent| SearchField | HelpPage
   deriving (Ord, Eq, Show)
 
 data St =
   St { _focusRing   :: F.FocusRing Name
      , _searchField :: E.Editor String Name
-     , _content     :: [Line]
+     , _content     :: L.List Name Line
      } deriving (Show)
 makeLenses ''St
 
 drawUi :: St -> [Widget Name]
-drawUi st = do 
+drawUi st = do
   case F.focusGetCurrent (_focusRing st) of
-    Just SearchField -> [ui]
     Just HelpPage    -> helpPage
-    Nothing          -> return emptyWidget
+    Just _ -> [ui]
   where
     ui = joinBorders $ withBorderStyle unicode $
       B.borderWithLabel (str "GeminiBrowser") $
@@ -63,19 +63,28 @@ drawUi st = do
            , B.hBorder
            , bottomText
            ]
-    searchField = B.border $ F.withFocusRing 
-      (_focusRing st) (E.renderEditor (str . unlines)) (_searchField st)
+    searchField = B.border $ F.withFocusRing (_focusRing st )
+      (E.renderEditor (str . unlines)) (_searchField st)
     contentArea = vBox
       [ B.hBorderWithLabel (str "Page-content")
       , padLeftRight 3 $ padTop (Pad 1) $
-        viewport PageContent T.Vertical (vBox . map renderLine $ _content st)
+        viewport PageContent T.Vertical $ vLimit 30 $
+        L.renderList drawListElement True (_content st)
       ]
     searchFieldArea = vLimitPercent 15 (hCenter (hLimit 65 searchField)
                    <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
-    bottomText = hCenter $ withAttr helpAttr $
-             str "Esc/Ctrl-q = quit, Ctrl-e = toggle help"
+    bottomText = hCenter $ withAttr helpAttr $ vBox
+             [ str "Esc/Ctrl-q = quit, Ctrl-e = toggle help. Ctrl-tab = cycle through focus areas."
+             , str ("Focus: " <> maybe "None" show (F.focusGetCurrent $ _focusRing st))
+             , str ("Current Line: " <> maybe "None" (show . snd) (L.listSelectedElement $ _content st))
+             ]
     helpPage = [viewport HelpPage T.Vertical $ str getHelpPage]
-             
+
+drawListElement :: Bool -> Line -> Widget Name
+drawListElement isSel line =
+    if isSel
+      then forceAttr selectedAttr . visible $ renderLine line
+      else renderLine line
 
 renderLine :: Line -> Widget Name
 renderLine (TextLine "") = str " "
@@ -104,43 +113,70 @@ renderLine (QuoteLine t) =
     qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
+handleEvent (T.VtyEvent (V.EvKey  V.KEsc []))             = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = do 
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = do
   r <- use focusRing
   case F.focusGetCurrent r of
     Just HelpPage -> focusRing    %= F.focusSetCurrent SearchField
     Just SearchField -> focusRing %= F.focusSetCurrent HelpPage
     Just _ -> return ()
-handleEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
-handleEvent (T.VtyEvent (V.EvKey V.KUp [])) =
-  zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
-handleEvent (T.VtyEvent (V.EvKey V.KDown [])) =
-  zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
+handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = do
+  r <- use focusRing
+  case F.focusGetCurrent r of
+    Just SearchField -> focusRing %= F.focusSetCurrent PageContent
+    Just PageContent -> focusRing %= F.focusSetCurrent SearchField
+    Just _ -> return ()
 handleEvent ev = do
   r <- use focusRing
   case F.focusGetCurrent r of
-    Just SearchField ->  case ev of
-              (T.VtyEvent (V.EvKey V.KEnter []))
-                -> do
-                  sf <- use searchField
-                  let query = concat $ E.getEditContents sf
-                  if query == "home" then startEvent 
-                  else
-                    case getUrl query of
-                      Left e -> T.modify (content .~ [TextLine (pack e)])
-                      Right url -> do
-                        -- Why won't this line execute?
-                        T.modify (content .~ [TextLine $ "Fetching " <> pack (show url)  <> " ..."])
-                        response <- liftIO $ getResponse url
-                        T.modify (content .~ response)
-              _ ->  zoom searchField $  E.handleEditorEvent ev
+    Just SearchField ->  handleSearchFieldEvent ev
+    Just PageContent -> handlePageContentEvent ev
     _ -> return ()
 
-getUrl :: String -> Either String Url
-getUrl query = do
+handleSearchFieldEvent :: T.BrickEvent Name e -> EventM Name St ()
+handleSearchFieldEvent ev = case ev of
+      (T.VtyEvent (V.EvKey V.KEnter []))
+        -> do
+          sf <- use searchField
+          let query = concat $ E.getEditContents sf
+          if query == "home" then startEvent
+          else queryUrl query
+      _ ->  zoom searchField $  E.handleEditorEvent ev
+
+handlePageContentEvent :: T.BrickEvent Name e -> EventM Name St ()
+handlePageContentEvent ev = 
+  case ev of 
+    (T.VtyEvent ev@(V.EvKey V.KUp [])) 
+      -> do 
+        zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
+        zoom content $ L.handleListEvent ev
+    (T.VtyEvent ev@(V.EvKey V.KDown []))
+      -> do
+        zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
+        zoom content $ L.handleListEvent ev
+    (T.VtyEvent ev@(V.EvKey V.KEnter []))
+      -> do
+        s <- use content
+        let line = maybe (TextLine mempty) snd (L.listSelectedElement s)
+        case line of
+          LinkLine url _ -> do
+            queryUrl (unpack url)
+            searchField .= E.editor SearchField (Just 1) (unpack url)
+          _ -> return ()
+    _ -> return ()
+
+
+mkList :: [Line] -> L.List Name Line
+mkList ls = L.list ListContent (Vec.fromList ls) 1
+
+queryUrl :: String -> EventM Name St ()
+queryUrl query = do
   case parseOnly pGeminiUrl (pack query) of
-    Left err -> Left $ "invalid url parse:" <> err
-    Right url -> return url
+    Left e -> T.modify (content .~ mkList [TextLine ("invalid url parse:" <> pack e)])
+    Right url -> do
+      response <- liftIO $ getResponse url
+      T.modify (content .~ mkList response)
 
 getResponse :: Url -> IO [Line]
 getResponse url = do
@@ -158,9 +194,9 @@ getResponse url = do
 
 initialState :: St
 initialState =
-  St (F.focusRing [SearchField, HelpPage])
+  St (F.focusRing [SearchField, PageContent, HelpPage])
      (E.editor SearchField (Just 1) "")
-     []
+     (L.list PageContent (Vec.fromList []) 1)
 
 app :: M.App St e Name
 app = M.App
@@ -173,18 +209,21 @@ app = M.App
 
 startEvent :: EventM Name St ()
 startEvent = do
-    result <- liftIO getTestPage
-    T.modify (content .~ result)
+    -- result <- liftIO getTestPage
+    result <- liftIO getHomePage
+    T.modify (content .~ mkList result)
     return ()
 
 attrbMap :: AttrMap
 attrbMap =
   attrMap defAttr
-    [ (linkAttr     , fg cyan)
-    , (preformatAttr, fg brightBlack)
-    , (quoteAttr    , fg magenta)
-    , (helpAttr     , green `on` black)
-    , (headingAttr  , withStyle (style underline) bold )
+    [ (linkAttr         , fg cyan)
+    , (preformatAttr    , fg brightBlack)
+    , (quoteAttr        , fg magenta)
+    , (helpAttr         , green `on` black)
+    , (headingAttr      , withStyle (style underline) bold )
+    , (selectedAttr     , white `on` cyan)
+    , (E.editFocusedAttr, white `on` cyan)
     ]
 
 linkAttr = attrName "link"
@@ -192,6 +231,8 @@ preformatAttr = attrName "preformatted"
 quoteAttr = attrName "quote"
 helpAttr = attrName "help"
 headingAttr = attrName "heading"
+selectedAttr = L.listSelectedAttr <> attrName "selected"
+
 
 
 tuiRun :: IO St
