@@ -35,9 +35,7 @@ getHelpPage = unlines ["# Gemini Web Browser -- Help Page "
                       , "Esc                         = Exit window"
                       , "Ctrl+e                      = open/close help menu"
                       , "Arrow key UP                = Scroll content UP"
-                      , "Arrow key DOWN              = Scroll content DOWN"
-                      , "Mouse Whell UP              = Scroll content UP"
-                      , "Mouse Wheel DOWN            = Scroll content DOWN"]
+                      , "Arrow key DOWN              = Scroll content DOWN"]
 
 
 
