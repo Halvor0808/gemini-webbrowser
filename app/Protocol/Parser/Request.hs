@@ -10,13 +10,14 @@ module Protocol.Parser.Request (
 
 import Protocol.Data.Request hiding (fragment, query, path, port, authority, scheme)
 import Utils.ParseUtil (isEOL, isAlphaDigit)
+
 import Data.Attoparsec.ByteString.Char8
-    ( Parser, char, takeWhile1, decimal, isAlpha_ascii,
-    isDigit, string, option, takeTill, endOfLine, satisfy, many1)
 import qualified Data.Attoparsec.ByteString.Char8 as Atto
+import qualified Data.ByteString as B (null) 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (pack)
 import Control.Applicative ((<|>), many, Applicative (liftA2))
+import Control.Monad (mfilter)
 
 
 pGeminiUrl :: Parser Url
@@ -36,7 +37,7 @@ pUrlGeneral schemeParser = do
   scheme    <- schemeParser
   authority <- pAuthority
   port      <- option 1965 (char ':' >> decimal)
-  path      <- option "/" pPath 
+  path      <- mfilter (not . B.null) pPath <|> pure "/"
   query     <- option "" (char '?' >> takeTill isEOL)
   fragment  <- option "" (char '#' >> takeTill isEOL)
   return (Url scheme authority port path query fragment)
@@ -50,16 +51,13 @@ pAuthority :: Parser ByteString
 pAuthority = Atto.takeWhile (\c -> c /= '/' && c /= '?' && c /= '#' && c /= '\r' && c /= '\n')
 
 pPath :: Parser ByteString
-pPath = option mempty pPath'
+pPath = option mempty (pPath' <|> "/")
   where
-    isLegalPathChar c = elem c $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "-_.~!$&()+*"
-    pPath' :: Parser ByteString
-    pPath' = do
-      liftA2 (<>) (mconcat <$> many pSubPath) "/"
-    pSubPath :: Parser ByteString
+    pPath' = do 
+      path <- mconcat <$> many1 pSubPath
+      trail <- option "/" "/"
+      return $ path <> trail
     pSubPath = do
       subP <- "/" *> Atto.takeWhile1 isLegalPathChar
       return ("/"<> subP)
-
-      
-
+    isLegalPathChar c = elem c $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "-_.~!$&()+*"
