@@ -29,8 +29,8 @@
   - [x] Displaying a gemini-page --raw
   - [x] Search textfield (without fetching page)
   - [x] Better difference between heading levels: indent underline (border) as well?
+  - [x] Help page for controls (Ctrl-e)
   - [ ] Resolve relative URLs
-  - [ ] Help page for controls (Ctrl-h)
   - [ ] Handler preformatted lines being cut off.
   - [ ] Handle navigating with links
   - [ ] Allow page/navigation history
