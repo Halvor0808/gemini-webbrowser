@@ -89,28 +89,28 @@ pageContent st =
           _            -> renderLine line
 
 renderLine :: Line -> Widget Name
-renderLine (TextLine "") = str " "
+renderLine (TextLine "") = strWrap " "
 renderLine (TextLine t) = strWrap $ unpack t
 renderLine (LinkLine t Nothing) =
-  withAttr linkAttr $ hyperlink (Txt.pack $ unpack t) . strWrap $ unpack t
+  withDefAttr linkAttr $ hyperlink (Txt.pack $ unpack t) . strWrap $ unpack t
 renderLine (LinkLine t (Just s)) =
-  withAttr linkAttr (hyperlink (Txt.pack $ unpack t) $ strWrap $ unpack s)
-renderLine (TogglePreformatMode "") = str ""
-renderLine (TogglePreformatMode t) =
-  withAttr preformatAttr (strWrap $ unpack t)
+  withDefAttr linkAttr (hyperlink (Txt.pack $ unpack t) $ strWrap $ unpack s)
+renderLine (TogglePreformatMode "") = withDefAttr preformatAttr (strWrap "```")
+renderLine (TogglePreformatMode t) = 
+  withDefAttr preformatAttr (strWrap $ "``` " <> unpack t)
 renderLine (PreformattedTextLine t) =
-  withAttr preformatAttr $ strWrapWith preSetting (unpack t)
+  withDefAttr preformatAttr $ strWrapWith preSetting (unpack t)
   where
     preSetting = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
 renderLine (HeadingLine i t) =
-  vBox [str "\n", indent <+> withAttr headingAttr (strWrap $ unpack t)]
+  vBox [str "\n", indent <+> withDefAttr  headingAttr (strWrap $ unpack t)]
   where indent = str $ concat (replicate (i - 1) "@ ")
 renderLine (UnorderedListLine t) =
   strWrapWith listSetting $ unpack t
   where
     listSetting = defaultWrapSettings { fillStrategy = FillPrefix "  * ", fillScope = FillAll }
 renderLine (QuoteLine t) =
-  withAttr quoteAttr $ strWrapWith qSetting $ unpack t
+  withDefAttr  quoteAttr $ strWrapWith qSetting $ unpack t
   where
     qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 
@@ -224,8 +224,9 @@ attrbMap =
     , (quoteAttr        , fg magenta)
     , (helpAttr         , green `on` black)
     , (headingAttr      , withStyle (style underline) bold )
-    , (selectedAttr     , white `on` cyan)
     , (E.editFocusedAttr, white `on` cyan)
+    , (L.listSelectedAttr, white `on` brightBlack)
+    , (L.listSelectedFocusedAttr, white `on` cyan)
     ]
 
 linkAttr = attrName "link"
@@ -233,7 +234,6 @@ preformatAttr = attrName "preformatted"
 quoteAttr = attrName "quote"
 helpAttr = attrName "help"
 headingAttr = attrName "heading"
-selectedAttr = L.listSelectedAttr <> attrName "selected"
 
 
 
