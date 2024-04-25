@@ -63,28 +63,30 @@ drawUi st = do
            , B.hBorder
            , bottomText
            ]
-    searchField = B.border $ F.withFocusRing (_focusRing st )
-      (E.renderEditor (str . unlines)) (_searchField st)
-    contentArea = vBox
-      [ B.hBorderWithLabel (str "Page-content")
-      , padLeftRight 3 $ padTop (Pad 1) $
-        viewport PageContent T.Vertical $ vLimit 30 $
-        L.renderList drawListElement True (_content st)
-      ]
+    contentArea = B.hBorderWithLabel (str "Page-content")
+                  <=> padLeftRight 3 (padTop (Pad 1) (pageContent st))
     searchFieldArea = vLimitPercent 15 (hCenter (hLimit 65 searchField)
-                   <=> hCenter (withAttr helpAttr (str "Hit Enter to search")))
-    bottomText = hCenter $ withAttr helpAttr $ vBox
+                    <=> hCenter (withDefAttr  helpAttr (str "Hit <Enter> to search")))
+    searchField = B.border $ F.withFocusRing (_focusRing st )
+                  (E.renderEditor (str . unlines)) (_searchField st)
+    bottomText = hCenter $ withDefAttr helpAttr $ vBox
              [ str "Esc/Ctrl-q = quit, Ctrl-e = toggle help. Ctrl-tab = cycle through focus areas."
              , str ("Focus: " <> maybe "None" show (F.focusGetCurrent $ _focusRing st))
              , str ("Current Line: " <> maybe "None" (show . snd) (L.listSelectedElement $ _content st))
              ]
     helpPage = [viewport HelpPage T.Vertical $ str getHelpPage]
 
-drawListElement :: Bool -> Line -> Widget Name
-drawListElement isSel line =
-    if isSel
-      then forceAttr selectedAttr . visible $ renderLine line
-      else renderLine line
+pageContent :: St -> Widget Name
+pageContent st =
+  viewport PageContent T.Vertical $ vLimit 30 $ -- 30 is just a guessed number
+  L.renderList drawListElement True (_content st)
+  where
+    isFocused = F.focusGetCurrent (_focusRing st) == Just PageContent
+    drawListElement isSel line =
+        case (isSel, isFocused) of
+          (True,True)  -> forceAttr L.listSelectedFocusedAttr . visible $ renderLine line
+          (True,False) -> forceAttr L.listSelectedAttr $ renderLine line
+          _            -> renderLine line
 
 renderLine :: Line -> Widget Name
 renderLine (TextLine "") = str " "
