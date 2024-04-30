@@ -91,12 +91,12 @@ pageContent st =
 renderLine :: Line -> Widget Name
 renderLine (TextLine "") = strWrap " "
 renderLine (TextLine t) = strWrap $ unpack t
-renderLine (LinkLine t Nothing) =
-  withDefAttr linkAttr $ hyperlink (Txt.pack $ unpack t) . strWrap $ unpack t
-renderLine (LinkLine t (Just s)) =
-  withDefAttr linkAttr (hyperlink (Txt.pack $ unpack t) $ strWrap $ unpack s)
+renderLine (LinkLine url Nothing) =
+  withDefAttr linkAttr $ hyperlink (Txt.pack (show url)) . strWrap $ showUrl url
+renderLine (LinkLine url (Just s)) =
+  withDefAttr linkAttr (hyperlink (Txt.pack (show url)) $ strWrap $ unpack s)
 renderLine (TogglePreformatMode "") = withDefAttr preformatAttr (strWrap "```")
-renderLine (TogglePreformatMode t) = 
+renderLine (TogglePreformatMode t) =
   withDefAttr preformatAttr (strWrap $ "``` " <> unpack t)
 renderLine (PreformattedTextLine t) =
   withDefAttr preformatAttr $ strWrapWith preSetting (unpack t)
@@ -142,15 +142,16 @@ handleSearchFieldEvent ev = case ev of
         -> do
           sf <- use searchField
           let query = concat $ E.getEditContents sf
-          if query == "home" then startEvent
-          else queryUrl query
+          if query == "home"
+            then startEvent
+            else queryUrl (uriToUrl . fromJust $ parseAbsoluteURI query)
       _ ->  zoom searchField $  E.handleEditorEvent ev
 
 handlePageContentEvent :: T.BrickEvent Name e -> EventM Name St ()
-handlePageContentEvent ev = 
-  case ev of 
-    (T.VtyEvent ev@(V.EvKey V.KUp [])) 
-      -> do 
+handlePageContentEvent ev =
+  case ev of
+    (T.VtyEvent ev@(V.EvKey V.KUp []))
+      -> do
         zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
         zoom content $ L.handleListEvent ev
     (T.VtyEvent ev@(V.EvKey V.KDown []))
@@ -163,8 +164,8 @@ handlePageContentEvent ev =
         let line = maybe (TextLine mempty) snd (L.listSelectedElement s)
         case line of
           LinkLine url _ -> do
-            queryUrl (unpack url)
-            searchField .= E.editor SearchField (Just 1) (unpack url)
+            queryUrl url
+            searchField .= E.editor SearchField (Just 1) (showUrl url)
           _ -> return ()
     _ -> return ()
 
@@ -172,13 +173,10 @@ handlePageContentEvent ev =
 mkList :: [Line] -> L.List Name Line
 mkList ls = L.list ListContent (Vec.fromList ls) 1
 
-queryUrl :: String -> EventM Name St ()
-queryUrl query = do
-  case parseOnly pGeminiUrl (pack query) of
-    Left e -> T.modify (content .~ mkList [TextLine ("invalid url parse:" <> pack e)])
-    Right url -> do
-      response <- liftIO $ getResponse url
-      T.modify (content .~ mkList response)
+queryUrl :: Url -> EventM Name St ()
+queryUrl url = do
+  do response <- liftIO $ getResponse url
+     T.modify (content .~ mkList response)
 
 getResponse :: Url -> IO [Line]
 getResponse url = do
