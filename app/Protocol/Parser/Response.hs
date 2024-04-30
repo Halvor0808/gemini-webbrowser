@@ -49,7 +49,7 @@ pMime = do
   return $ makeMime typing params
   where
     pType = do
-      typ     <- pManyAlphaDigit 
+      typ     <- pManyAlphaDigit
       subtype <- char '/' *> pManyAlphaDigit
       return (typ, subtype)
 
@@ -61,3 +61,63 @@ pStatusCode = do
   case (dig1, dig2) of
     (d1, d2) | d1 > 0 && d1 <= 6 -> return $ getStatusCode d1 d2
     _                            -> fail "Invalid status code"
+
+type StateParser a = StateT Bool Parser a
+
+runPLines :: ByteString -> Either String [Line]
+runPLines = parseOnly (evalStateT pLines False)
+
+pLines :: StateParser [Line]
+pLines = many1 pLine
+
+pLine :: StateParser Line
+pLine = do
+    b <- get
+    if b then
+            pTogglePreformatMode
+            <|> lift pPreformattedTextLine
+        else
+            pTogglePreformatMode
+            <|> lift pLinkLine
+            <|> lift pHeadingLine
+            <|> lift pUnorderedListLine
+            <|> lift pQuoteLine
+            <|> lift pTextLine
+
+pLinkLine :: Parser Line
+pLinkLine = do
+    _ <- "=>"
+    _ <- skipSpace
+    url <- takeTill isSpace
+    altName <- optional (" " *> consumeRestOfLine)
+    let url' = case unpack url of
+            ('/':xs) -> uriToUrl $ nullURI {uriPath = '/':xs}
+            u        -> uriToUrl $ fromMaybe (error "invalid url") (parseURIReference u)
+    return $ LinkLine { _link = url', _displayText = altName }
+
+pTogglePreformatMode :: StateParser Line
+pTogglePreformatMode = do
+    altText <- lift $ "```" *> skipHorizontalSpace *> consumeRestOfLine
+    bool <- get
+    put (not bool)
+    return $ TogglePreformatMode altText
+
+pPreformattedTextLine :: Parser Line
+pPreformattedTextLine = PreformattedTextLine <$> consumeRestOfLine
+
+pHeadingLine :: Parser Line
+pHeadingLine = do
+    hashes <- length <$> many1 (char '#') <* skipSpace
+    let maxLvl = 3
+        level = min maxLvl hashes
+    HeadingLine level <$> consumeRestOfLine
+
+
+pUnorderedListLine :: Parser Line
+pUnorderedListLine = UnorderedListLine <$> ("* " *> consumeRestOfLine)
+
+pQuoteLine :: Parser Line
+pQuoteLine = QuoteLine <$> ("> " *> consumeRestOfLine)
+
+pTextLine :: Parser Line
+pTextLine = TextLine <$> consumeRestOfLine

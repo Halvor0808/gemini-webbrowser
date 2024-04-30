@@ -23,6 +23,15 @@ data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: ByteString}
               -- | CLIENT_CERT StatusCode     FailureMessage
               deriving (Eq, Show)
 
+data Line = TextLine             { _text        :: ByteString }
+          | TogglePreformatMode  { _ByteString  :: ByteString }
+          | PreformattedTextLine { _text        :: ByteString }
+          | UnorderedListLine    { _text        :: ByteString }
+          | QuoteLine            { _text        :: ByteString }
+          | HeadingLine          { _level       :: Int        , _text :: ByteString}
+          | LinkLine             { _link        :: Url , _displayText :: Maybe ByteString}
+          deriving (Show, Eq)
+
 data StatusCode = InputCode              Int Int
                 | SuccessCode            Int Int
                 | RedirCode              Int Int
