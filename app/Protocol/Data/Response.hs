@@ -5,13 +5,13 @@ module Protocol.Data.Response (
   MIME, makeMime,
   Parameters(..),
   StatusCode(..), getStatusCode,
+  Line(..),
 ) where
 
 import Data.ByteString ( ByteString)
 import Data.List (intercalate)
 import qualified Data.ByteString.Char8 as B
 
-import Protocol.Data.Gemtext (Line)
 import Protocol.Data.Request (Url)
 
 data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: ByteString}

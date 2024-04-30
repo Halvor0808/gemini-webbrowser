@@ -1,22 +1,33 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Protocol.Parser.Response where
+module Protocol.Parser.Response (
+  runPLines, 
+  pLines,
+  pResponse,
+  pMime,
+  pStatusCode,
+) where
 
 import Data.Attoparsec.ByteString.Char8
-import Control.Applicative (optional)
+import Control.Applicative (optional, (<|>))
 import Data.Text.Internal.Read (digitToInt)
-import Control.Monad.State.Lazy (evalStateT)
+import Control.Monad.State.Lazy ( StateT, MonadState(put, get), evalStateT, MonadTrans(lift) )
+import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (unpack)
 
 import Protocol.Data.Response
     ( MIME,
       StatusCode(..),
       Response(..),
       getStatusCode,
-      makeMime )
-import Protocol.Parser.Gemtext
-import Utils.ParseUtil (pParameters, pManyAlphaDigit, consumeRestOfLine)
+      makeMime,
+      Line(..) )
+import Utils.ParseUtil (pParameters, pManyAlphaDigit, consumeRestOfLine, consumeRestOfLine, skipHorizontalSpace)
 import Protocol.Parser.Request (pUrl, pGeminiUrl)
+import Protocol.Data.Request (uriToUrl)
+import Network.URI
+import Data.Maybe
 
 
 pResponse :: Parser Response

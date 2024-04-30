@@ -7,9 +7,8 @@ module Pages (
 ) where
 
 
-import Protocol.Data.Response (Response(..))
-import Protocol.Parser.Gemtext (runPLines)
-import Protocol.Data.Gemtext (Line(..))
+import Protocol.Parser.Response (runPLines)
+import Protocol.Data.Response (Line(..), Response(..))
 
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import Data.ByteString.Char8 as C8 (pack)

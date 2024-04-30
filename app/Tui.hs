@@ -29,15 +29,15 @@ import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Lens.Micro
 import qualified Data.Vector as Vec
-
-import Protocol.Data.Gemtext (Line(..))
 import Protocol.Parser.Response (pResponse)
 import qualified Data.ByteString.Char8 as C8
 import Protocol.Data.Response
 import Socket (retrievePage)
-import Protocol.Data.Request (Url(..))
+import Protocol.Data.Request
 import Protocol.Parser.Request
 import Pages
+import Network.URI (parseAbsoluteURI)
+import Data.Maybe (fromJust)
 
 
 data Name =  PageContent | ListContent| SearchField | HelpPage

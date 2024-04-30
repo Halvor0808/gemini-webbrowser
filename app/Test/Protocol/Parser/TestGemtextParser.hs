@@ -5,7 +5,7 @@ module Test.Protocol.Parser.TestGemtextParser (
 ) where
 
 import Test.Utils.ParseUtil (badParseTest)
-import Protocol.Parser.Gemtext
+import Protocol.Parser.Response
 import Control.Monad.State.Lazy (evalStateT)
 import Data.ByteString (ByteString)
 

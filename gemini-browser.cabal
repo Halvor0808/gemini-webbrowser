@@ -43,11 +43,9 @@ executable gemini-browser
     other-modules:
         Protocol.Data.Response,
         Protocol.Data.Request,
-        Protocol.Data.Gemtext,
 
         Protocol.Parser.Response,
         Protocol.Parser.Request,
-        Protocol.Parser.Gemtext,
 
         Pages,
         Tui, 
