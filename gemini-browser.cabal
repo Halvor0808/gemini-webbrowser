@@ -27,7 +27,6 @@ executable gemini-browser
         mtl,
         attoparsec,
         brick,
-        megaparsec,
         network,
         text,
         word-wrap,
