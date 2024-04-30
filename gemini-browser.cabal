@@ -27,7 +27,6 @@ executable gemini-browser
         mtl,
         attoparsec,
         brick,
-        network,
         text,
         word-wrap,
         bytestring,
@@ -37,7 +36,9 @@ executable gemini-browser
         microlens-mtl,
         vector,
         tls,
+        network,
         network-simple-tls,
+        network-uri,
     
     other-modules:
         Protocol.Data.Response,
