@@ -6,10 +6,6 @@ module Main where
 import Test.Protocol.Parser.TestResponse (testResponse)
 import Test.Protocol.Parser.TestRequest (testRequest)
 import Tui (tuiRun)
-import Socket (
-  retrievePage
-  )
-import Protocol.Data.Request (Url(..))
 
 main :: IO ()
 main = do

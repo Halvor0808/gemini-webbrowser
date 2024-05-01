@@ -8,7 +8,7 @@ import qualified Data.ByteString.Char8 as C
 import Network.Simple.TCP.TLS
 import Network.TLS
 import Control.Monad.IO.Class (liftIO)
-import Protocol.Data.Request (Url, authority, path)
+import Protocol.Data.Request (Url(..), authority, path)
 
 
 addCallback :: ClientParams -> ClientParams
@@ -20,12 +20,11 @@ addCallback params = params { clientHooks = modi $ clientHooks params }
 retrievePage :: Url -> IO C.ByteString
 retrievePage url = do
   let host = C.unpack $ authority url
-      urlPath = path url
   params <- addCallback <$> newDefaultClientParams (host, ":1965")
   connect params host "1965" $ \(ctx,_) -> do
-    send ctx ("gemini://" <> C.pack host <> urlPath <> "\r\n") 
+    send ctx ("gemini://" <> C.pack host <> path url <> "\r\n")
     recvAll ctx
-  where 
+  where
     recvAll ctx = do
       recv ctx >>= \case
         Nothing -> return mempty

@@ -32,12 +32,13 @@ import qualified Data.Vector as Vec
 import Protocol.Parser.Response (pResponse)
 import qualified Data.ByteString.Char8 as C8
 import Protocol.Data.Response
-import Socket (retrievePage)
 import Protocol.Data.Request
+import Socket (retrievePage)
 import Protocol.Parser.Request
 import Pages
-import Network.URI (parseAbsoluteURI)
-import Data.Maybe (fromJust)
+import Network.URI
+import Data.Maybe (fromJust, fromMaybe)
+import qualified GHC.Real as T
 
 
 data Name =  PageContent | ListContent| SearchField | HelpPage
@@ -47,6 +48,7 @@ data St =
   St { _focusRing   :: F.FocusRing Name
      , _searchField :: E.Editor String Name
      , _content     :: L.List Name Line
+     , _currentPage :: Url
      } deriving (Show)
 makeLenses ''St
 
@@ -78,14 +80,14 @@ drawUi st = do
 
 pageContent :: St -> Widget Name
 pageContent st =
-  viewport PageContent T.Vertical $ vLimit 30 $ -- 30 is just a guessed number
+  viewport PageContent T.Vertical $ vLimit 30 $
   L.renderList drawListElement True (_content st)
   where
     isFocused = F.focusGetCurrent (_focusRing st) == Just PageContent
     drawListElement isSel line =
         case (isSel, isFocused) of
-          (True,True)  -> forceAttr L.listSelectedFocusedAttr . visible $ renderLine line
-          (True,False) -> forceAttr L.listSelectedAttr $ renderLine line
+          (True, True)  -> forceAttr L.listSelectedFocusedAttr . visible $ renderLine line
+          (True, False) -> forceAttr L.listSelectedAttr        . visible $ renderLine line
           _            -> renderLine line
 
 renderLine :: Line -> Widget Name
@@ -146,28 +148,37 @@ handleSearchFieldEvent ev = case ev of
             then startEvent
             else queryUrl (uriToUrl . fromJust $ parseAbsoluteURI query)
       _ ->  zoom searchField $  E.handleEditorEvent ev
+      where
+        sfQuery q
+          | q == "home" = startEvent
+          | otherwise   = maybe (return()) (queryUrl . uriToUrl) (parseAbsoluteURI q)
 
 handlePageContentEvent :: T.BrickEvent Name e -> EventM Name St ()
 handlePageContentEvent ev =
   case ev of
-    (T.VtyEvent ev@(V.EvKey V.KUp []))
-      -> do
+    (T.VtyEvent ev@(V.EvKey V.KUp [])) -> do
         zoom content $ M.vScrollBy (M.viewportScroll PageContent) (-1)
         zoom content $ L.handleListEvent ev
-    (T.VtyEvent ev@(V.EvKey V.KDown []))
-      -> do
+    (T.VtyEvent ev@(V.EvKey V.KDown [])) -> do
         zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
         zoom content $ L.handleListEvent ev
-    (T.VtyEvent ev@(V.EvKey V.KEnter []))
-      -> do
-        s <- use content
-        let line = maybe (TextLine mempty) snd (L.listSelectedElement s)
-        case line of
-          LinkLine url _ -> do
-            queryUrl url
-            searchField .= E.editor SearchField (Just 1) (showUrl url)
-          _ -> return ()
+    (T.VtyEvent ev@(V.EvKey V.KEnter [])) -> do
+      -- Resolving selected link:
+      -- If selected line is AbsoluteLink -> query link
+      -- If selected line is RelativeLink -> resolve with link of current page
+      list        <- use content
+      presentPage <-  urlToUri <$> T.gets _currentPage
+      let selectedLine = maybe (TextLine mempty) snd (L.listSelectedElement list)
+      case selectedLine of
+        LinkLine selectUrl _ ->
+          let resolvedUri   = urlToUri selectUrl `Network.URI.relativeTo` presentPage
+              urlAction url = do
+                  queryUrl url
+                  searchField .= E.editor SearchField (Just 1) (showUrl url)
+          in  (urlAction . uriToUrl) resolvedUri
+        _ -> return ()
     _ -> return ()
+
 
 
 mkList :: [Line] -> L.List Name Line
@@ -175,15 +186,16 @@ mkList ls = L.list ListContent (Vec.fromList ls) 1
 
 queryUrl :: Url -> EventM Name St ()
 queryUrl url = do
-  do response <- liftIO $ getResponse url
-     T.modify (content .~ mkList response)
+  response <- liftIO $ getResponse url
+  T.modify (currentPage .~ url)
+  T.modify (content .~ mkList response)
 
 getResponse :: Url -> IO [Line]
 getResponse url = do
   response <- retrievePage url
   case parseOnly pResponse response of
     Left err -> do
-      return [TextLine $ "invalid response?: " <> pack err <> " :\n" <> pack (show response)]
+      return [TextLine $ pack err <> " :\n", TextLine response]
     Right response ->
       case response of
         INPUT _ _             -> return [TextLine "Input response"]
@@ -195,8 +207,9 @@ getResponse url = do
 initialState :: St
 initialState =
   St (F.focusRing [SearchField, PageContent, HelpPage])
-     (E.editor SearchField (Just 1) "")
+     (E.editor SearchField (Just 1) "home")
      (L.list PageContent (Vec.fromList []) 1)
+     (Url "" "" 1965 "home" "" "")
 
 app :: M.App St e Name
 app = M.App
