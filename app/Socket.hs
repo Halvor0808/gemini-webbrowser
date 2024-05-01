@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
-module Socket ( retrievePage, sockTests, getPage ) where
+module Socket ( retrievePage, sockTests, getPage, getResponse ) where
 
 import qualified Control.Exception as E
 import qualified Data.ByteString.Char8 as C
@@ -9,6 +9,10 @@ import Network.Simple.TCP.TLS
 import Network.TLS
 import Control.Monad.IO.Class (liftIO)
 import Protocol.Data.Request (Url(..), authority, path)
+import Protocol.Data.Response (Line(..), Response (..))
+import Data.Attoparsec.ByteString.Char8
+import Protocol.Parser.Response (pResponse)
+import Data.ByteString.Char8 (pack)
 
 
 addCallback :: ClientParams -> ClientParams
@@ -29,6 +33,22 @@ retrievePage url = do
       recv ctx >>= \case
         Nothing -> return mempty
         Just chunk -> (chunk <>) <$> recvAll ctx
+
+
+
+getResponse :: Url -> IO [Line]
+getResponse url = do
+  response <- retrievePage url
+  case parseOnly pResponse response of
+    Left err -> do
+      return [TextLine $ pack err <> " :\n", TextLine response]
+    Right response ->
+      case response of
+        INPUT _ _             -> return [TextLine "Input response"]
+        SUCCESS _ _ lines     -> return lines
+        REDIRECT _ newUrl     -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
+        ANY_FAIL code failMsg -> return [
+          TextLine $ "Failed response: " <> pack (show code) <>" :"<> failMsg]
 
 
 -- TESTING

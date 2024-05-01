@@ -20,7 +20,6 @@ import Brick (style)
 import Graphics.Vty.Attributes
 import qualified Graphics.Vty as V
 
-import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import Data.ByteString.Char8 (pack, unpack)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as Txt
@@ -29,16 +28,12 @@ import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Lens.Micro
 import qualified Data.Vector as Vec
-import Protocol.Parser.Response (pResponse)
-import qualified Data.ByteString.Char8 as C8
 import Protocol.Data.Response
 import Protocol.Data.Request
-import Socket (retrievePage)
-import Protocol.Parser.Request
+import Socket (retrievePage, getResponse)
 import Pages
 import Network.URI
 import Data.Maybe (fromJust, fromMaybe)
-import qualified GHC.Real as T
 
 
 data Name =  PageContent | ListContent| SearchField | HelpPage
@@ -190,19 +185,6 @@ queryUrl url = do
   T.modify (currentPage .~ url)
   T.modify (content .~ mkList response)
 
-getResponse :: Url -> IO [Line]
-getResponse url = do
-  response <- retrievePage url
-  case parseOnly pResponse response of
-    Left err -> do
-      return [TextLine $ pack err <> " :\n", TextLine response]
-    Right response ->
-      case response of
-        INPUT _ _             -> return [TextLine "Input response"]
-        SUCCESS _ _ lines     -> return lines
-        REDIRECT _ newUrl     -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
-        ANY_FAIL code failMsg -> return [
-          TextLine $ "Failed response: " <> pack (show code) <>" :"<> failMsg]
 
 initialState :: St
 initialState =
