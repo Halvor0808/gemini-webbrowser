@@ -161,7 +161,8 @@ handleSearchFieldEvent ev =
       (T.VtyEvent (V.EvKey V.KEnter [])) -> do
           sf <- use searchField
           let query = concat $ E.getEditContents sf
-              url = (uriToUrl . fromJust . parseAbsoluteURI) query
+              url = if query=="home" then home 
+                    else (uriToUrl . fromJust . parseAbsoluteURI) query
           queryUrl url
       _ ->  zoom searchField $  E.handleEditorEvent ev
 
