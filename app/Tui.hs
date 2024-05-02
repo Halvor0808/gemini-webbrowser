@@ -137,10 +137,10 @@ renderLine (QuoteLine t) =
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
 handleEvent (T.VtyEvent (V.EvKey  V.KEsc []))              = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = do
-  togglePage HelpPage
-handleEvent (T.VtyEvent (V.EvKey (V.KChar 'r') [V.MCtrl])) = do
-  togglePage History
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'w') [V.MCtrl])) = 
+  focusRing %= F.focusSetCurrent SearchField
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = togglePage HelpPage
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'r') [V.MCtrl])) = togglePage History
 handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = do
   r <- use focusRing
   case F.focusGetCurrent r of
