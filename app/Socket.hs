@@ -8,7 +8,7 @@ import qualified Data.ByteString.Char8 as C
 import Network.Simple.TCP.TLS
 import Network.TLS
 import Control.Monad.IO.Class (liftIO)
-import Protocol.Data.Request (Url(..), authority, path)
+import Protocol.Data.Request (Url(..), authority, path, showUrl)
 import Protocol.Data.Response (Line(..), Response (..))
 import Data.Attoparsec.ByteString.Char8
 import Protocol.Parser.Response (pResponse)
@@ -37,7 +37,12 @@ retrievePage url = do
 
 
 getResponse :: Url -> IO [Line]
-getResponse url = do
+getResponse url = getResponse' maxRedirects url url
+  where maxRedirects = 6
+
+getResponse' :: Int -> Url -> Url -> IO [Line]
+getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> pack (showUrl target)]
+getResponse' i target url = do
   response <- retrievePage url
   case parseOnly pResponse response of
     Left err -> do
@@ -46,7 +51,7 @@ getResponse url = do
       case response of
         INPUT _ _             -> return [TextLine "Input response"]
         SUCCESS _ _ lines     -> return lines
-        REDIRECT _ newUrl     -> return [TextLine $ "Redirect to" <> pack (show newUrl)]
+        REDIRECT _ newUrl     -> getResponse' (i-1) target newUrl
         ANY_FAIL code failMsg -> return [
           TextLine $ "Failed response: " <> pack (show code) <>" :"<> failMsg]
 
