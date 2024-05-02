@@ -187,7 +187,6 @@ handlePageContentEvent ev =
           let resolvedUri   = urlToUri selectUrl `Network.URI.relativeTo` presentPage
               urlAction url = do
                   queryUrl url
-                  searchField .= E.editor SearchField (Just 1) (showUrl url)
           in  (urlAction . uriToUrl) resolvedUri
         _ -> return ()
     _ -> return ()
@@ -225,6 +224,7 @@ mkList n ls = L.list n (Vec.fromList ls) 1
 queryUrl :: Url -> EventM Name St ()
 queryUrl url = do
   pushToHistory url
+  searchField .= E.editor SearchField (Just 1) (showUrl url)
   case url of
     url | url == home -> startEvent
     _          -> do
