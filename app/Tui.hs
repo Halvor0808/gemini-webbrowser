@@ -34,23 +34,33 @@ import Socket (retrievePage, getResponse)
 import Pages
 import Network.URI
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Default.Class
 
 
-data Name =  PageContent | ListContent| SearchField | HelpPage
+data Name =  PageContent | ListContent| SearchField | HelpPage | History
   deriving (Ord, Eq, Show)
 
+instance Default Name where
+  def = SearchField
+
 data St =
-  St { _focusRing   :: F.FocusRing Name
-     , _searchField :: E.Editor String Name
-     , _content     :: L.List Name Line
-     , _currentPage :: Url
+  St { _focusRing     :: F.FocusRing Name
+     , _searchField   :: E.Editor String Name
+     , _content       :: L.List Name Line
+     , _currentPage   :: Url
+     , _history       :: L.List Name Url
+     , _previousFocus :: Name
      } deriving (Show)
 makeLenses ''St
+
+
+------ Drawing functions ------
 
 drawUi :: St -> [Widget Name]
 drawUi st = do
   case F.focusGetCurrent (_focusRing st) of
-    Just HelpPage    -> helpPage
+    Just HelpPage -> helpPage
+    Just History  -> [drawHistory st]
     Just _ -> [ui]
   where
     ui = joinBorders $ withBorderStyle unicode $
@@ -82,10 +92,21 @@ pageContent st =
     drawListElement isSel line =
         case (isSel, isFocused) of
           (True, True)  -> forceAttr L.listSelectedFocusedAttr . visible $ renderLine line
-          (True, False) -> forceAttr L.listSelectedAttr        . visible $ renderLine line
-          _            -> renderLine line
+          (True, False) -> forceAttr L.listSelectedAttr $ renderLine line
+          _             -> renderLine line
 
-renderLine :: Line -> Widget Name
+
+drawHistory :: St -> Widget Name
+drawHistory st =
+  padTop (Pad 10) . hCenter . vLimitPercent 50 . hLimit 65  . 
+  B.borderWithLabel (str "History") $ list
+  where list = L.renderListWithIndex renderUrl True (_history st)
+        renderUrl i True url  = withDefAttr L.listSelectedAttr . strWrap
+                              $ show i <> ".  " <> showUrl url
+        renderUrl i False url = withDefAttr linkAttr . strWrap
+                              $ show i <> ".  " <> showUrl url
+
+renderLine :: Line -> Widget n
 renderLine (TextLine "") = strWrap " "
 renderLine (TextLine t) = strWrap $ unpack t
 renderLine (LinkLine url Nothing) =
@@ -111,15 +132,15 @@ renderLine (QuoteLine t) =
   where
     qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 
+----- Event handling functions ------
+
 handleEvent :: T.BrickEvent Name e -> EventM Name St ()
-handleEvent (T.VtyEvent (V.EvKey  V.KEsc []))             = M.halt
+handleEvent (T.VtyEvent (V.EvKey  V.KEsc []))              = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [V.MCtrl])) = M.halt
 handleEvent (T.VtyEvent (V.EvKey (V.KChar 'e') [V.MCtrl])) = do
-  r <- use focusRing
-  case F.focusGetCurrent r of
-    Just HelpPage -> focusRing    %= F.focusSetCurrent SearchField
-    Just SearchField -> focusRing %= F.focusSetCurrent HelpPage
-    Just _ -> return ()
+  togglePage HelpPage
+handleEvent (T.VtyEvent (V.EvKey (V.KChar 'r') [V.MCtrl])) = do
+  togglePage History
 handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = do
   r <- use focusRing
   case F.focusGetCurrent r of
@@ -129,24 +150,21 @@ handleEvent (T.VtyEvent (V.EvKey (V.KChar '\t') [])) = do
 handleEvent ev = do
   r <- use focusRing
   case F.focusGetCurrent r of
-    Just SearchField ->  handleSearchFieldEvent ev
+    Just SearchField -> handleSearchFieldEvent ev
     Just PageContent -> handlePageContentEvent ev
-    _ -> return ()
+    Just History     -> handleHistoryEvent ev
+    _                 -> return ()
 
 handleSearchFieldEvent :: T.BrickEvent Name e -> EventM Name St ()
-handleSearchFieldEvent ev = case ev of
-      (T.VtyEvent (V.EvKey V.KEnter []))
-        -> do
+handleSearchFieldEvent ev =
+  case ev of
+      (T.VtyEvent (V.EvKey V.KEnter [])) -> do
           sf <- use searchField
           let query = concat $ E.getEditContents sf
-          if query == "home"
-            then startEvent
-            else queryUrl (uriToUrl . fromJust $ parseAbsoluteURI query)
+              url = if query=="home" then home 
+                    else (uriToUrl . fromJust . parseAbsoluteURI) query
+          queryUrl url
       _ ->  zoom searchField $  E.handleEditorEvent ev
-      where
-        sfQuery q
-          | q == "home" = startEvent
-          | otherwise   = maybe (return()) (queryUrl . uriToUrl) (parseAbsoluteURI q)
 
 handlePageContentEvent :: T.BrickEvent Name e -> EventM Name St ()
 handlePageContentEvent ev =
@@ -174,24 +192,60 @@ handlePageContentEvent ev =
         _ -> return ()
     _ -> return ()
 
+handleHistoryEvent :: T.BrickEvent Name e -> EventM Name St ()
+handleHistoryEvent ev =
+  case ev of
+    (T.VtyEvent (V.EvKey V.KEnter [])) -> do
+      list <- use history
+      let selectedUrl = maybe (error "should not happen") snd (L.listSelectedElement list)
+      queryUrl selectedUrl
+      togglePage History
+    (T.VtyEvent e) -> zoom history $ L.handleListEvent e
+    _ -> return ()
 
+togglePage :: Name -> EventM Name St ()
+togglePage togglePage = do
+  r <- use focusRing
+  case F.focusGetCurrent r of
+    Just focus | togglePage == focus
+               -> use previousFocus >>= changeFocus
+    Just _     -> changeFocus togglePage
 
-mkList :: [Line] -> L.List Name Line
-mkList ls = L.list ListContent (Vec.fromList ls) 1
+changeFocus :: Name -> EventM Name St ()
+changeFocus n = do
+  r <- use focusRing
+  previous <- use previousFocus
+  let current = fromMaybe def (F.focusGetCurrent r)
+  previousFocus .= current
+  focusRing %= F.focusSetCurrent n
+
+mkList :: n -> [a] -> L.List n a
+mkList n ls = L.list n (Vec.fromList ls) 1
 
 queryUrl :: Url -> EventM Name St ()
 queryUrl url = do
-  response <- liftIO $ getResponse url
-  T.modify (currentPage .~ url)
-  T.modify (content .~ mkList response)
+  pushToHistory url
+  case url of
+    url | url == home -> startEvent
+    _          -> do
+      response <- liftIO $ getResponse url
+      T.modify (currentPage .~ url)
+      T.modify (content .~ mkList ListContent response)
+  where
+    pushToHistory :: Url -> EventM n St ()
+    pushToHistory url = T.modify (history %~ L.listInsert 0 url)
 
+
+----- Setup functions ------
 
 initialState :: St
 initialState =
-  St (F.focusRing [SearchField, PageContent, HelpPage])
+  St (F.focusRing [SearchField, PageContent, HelpPage, History])
      (E.editor SearchField (Just 1) "home")
      (L.list PageContent (Vec.fromList []) 1)
-     (Url "" "" 1965 "home" "" "")
+     home
+     (mkList History [home])
+     PageContent
 
 app :: M.App St e Name
 app = M.App
@@ -206,7 +260,7 @@ startEvent :: EventM Name St ()
 startEvent = do
     -- result <- liftIO getTestPage
     result <- liftIO getHomePage
-    T.modify (content .~ mkList result)
+    T.modify (content .~ mkList ListContent result)
     return ()
 
 attrbMap :: AttrMap

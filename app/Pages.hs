@@ -4,11 +4,13 @@ module Pages (
     getHomePage,
     getTestPage,
     getHelpPage,
+    home,
 ) where
 
 
 import Protocol.Parser.Response (runPLines)
 import Protocol.Data.Response (Line(..), Response(..))
+import Protocol.Data.Request (Url(..))
 
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import Data.ByteString.Char8 as C8 (pack)
@@ -20,6 +22,15 @@ getTestPage = do
 
 getHomePage :: IO [Line]
 getHomePage = getLocalWebPage "app/homepage.gmi"
+
+home :: Url
+home = Url { scheme = ""
+           , authority = ""
+           , port = 1965
+           , path = "home"
+           , query = ""
+           , fragment = ""
+           }
 
 getHelpPage :: String
 getHelpPage = unlines ["# Gemini Web Browser -- Help Page "
