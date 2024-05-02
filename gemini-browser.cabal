@@ -39,6 +39,8 @@ executable gemini-browser
         network,
         network-simple-tls,
         network-uri,
+        data-default-class,
+        -- data-default-class is more lightweight than data-default
     
     other-modules:
         Protocol.Data.Response,
