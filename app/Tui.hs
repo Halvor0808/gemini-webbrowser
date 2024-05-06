@@ -203,20 +203,25 @@ handleHistoryEvent ev =
     _ -> return ()
 
 togglePage :: Name -> EventM Name St ()
-togglePage togglePage = do
+togglePage page = do
   r <- use focusRing
   case F.focusGetCurrent r of
-    Just focus | togglePage == focus
+    Just focus | page == focus
                -> use previousFocus >>= changeFocus
-    Just _     -> changeFocus togglePage
+    Just _     -> changeFocus page
+
+allTogglePages = [HelpPage, History]
 
 changeFocus :: Name -> EventM Name St ()
-changeFocus n = do
+changeFocus new = do
   r <- use focusRing
   previous <- use previousFocus
   let current = fromMaybe def (F.focusGetCurrent r)
-  previousFocus .= current
-  focusRing %= F.focusSetCurrent n
+  if current `elem` allTogglePages
+    then focusRing %= F.focusSetCurrent new
+    else do
+      previousFocus .= current
+      focusRing %= F.focusSetCurrent new
 
 mkList :: n -> [a] -> L.List n a
 mkList n ls = L.list n (Vec.fromList ls) 1
