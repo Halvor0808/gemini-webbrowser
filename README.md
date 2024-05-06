@@ -33,8 +33,8 @@
   - [ ] Handle preformatted lines being cut off.
   - [ ] Handle navigating with links
     - [x] Cursor and navigating with keyboard
-    - [ ] Resolving relative URLs
-  - [ ] Allow history, and history navigation
+    - [x] Resolving relative URLs
+  - [x] Allow history, and history navigation
 
 TUI Goal:
 ```
