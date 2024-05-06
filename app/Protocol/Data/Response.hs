@@ -16,7 +16,7 @@ import Protocol.Data.Request (Url)
 
 data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: ByteString}
               | SUCCESS     {_statusCode :: StatusCode, _mime    :: Maybe MIME,  _lines :: [Line]}
-              | REDIRECT    {_statusCode :: StatusCode, _url     :: Url}
+              | REDIRECT    {_statusCode :: StatusCode, _url     :: Url       }
               | ANY_FAIL    {_statusCode :: StatusCode, _failMsg :: ByteString} -- temporary replacement for error codes 40,50,60
               -- | TEMP_FAIL   StatusCode     FailureMessage
               -- | PERM_FAIL   StatusCode     FailureMessage
@@ -28,8 +28,8 @@ data Line = TextLine             { _text        :: ByteString }
           | PreformattedTextLine { _text        :: ByteString }
           | UnorderedListLine    { _text        :: ByteString }
           | QuoteLine            { _text        :: ByteString }
-          | HeadingLine          { _level       :: Int        , _text :: ByteString}
-          | LinkLine             { _link        :: Url , _displayText :: Maybe ByteString}
+          | HeadingLine          { _level       :: Int        , _text        ::       ByteString}
+          | LinkLine             { _link        :: Url        , _displayText :: Maybe ByteString}
           deriving (Show, Eq)
 
 data StatusCode = InputCode              Int Int
@@ -61,7 +61,7 @@ getStatusCode x y =
 
 type MainMimeType = ByteString
 type SubMimeType = ByteString
-data MIME = MIME { _mainType   :: MainMimeType
+data MIME = MIME { _mainType   ::  MainMimeType
                  , _subType    ::  SubMimeType
                  , _parameters ::  Maybe Parameters
                  } deriving (Eq)
