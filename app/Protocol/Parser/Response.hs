@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Protocol.Parser.Response (
-  runPLines, 
+  runPLines,
   pLines,
   pResponse,
   pMime,
@@ -24,7 +24,7 @@ import Protocol.Data.Response
       makeMime,
       Line(..) )
 import Utils.ParseUtil (pParameters, pManyAlphaDigit, consumeRestOfLine, consumeRestOfLine, skipHorizontalSpace)
-import Protocol.Parser.Request (pUrl, pGeminiUrl)
+import Protocol.Parser.Request (pGeminiUrl)
 import Protocol.Data.Request (uriToUrl)
 import Network.URI
 import Data.Maybe
@@ -65,7 +65,7 @@ pStatusCode = do
 type StateParser a = StateT Bool Parser a
 
 runPLines :: ByteString -> Either String [Line]
-runPLines = parseOnly (evalStateT pLines False)
+runPLines i = eitherResult . (`feed` "") . (`feed` "\n") $ parse (evalStateT pLines False) i
 
 pLines :: StateParser [Line]
 pLines = many1 pLine

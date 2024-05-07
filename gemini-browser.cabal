@@ -41,6 +41,7 @@ executable gemini-browser
         network-uri,
         data-default-class,
         -- data-default-class is more lightweight than data-default
+        QuickCheck,
     
     other-modules:
         Protocol.Data.Response,
@@ -55,10 +56,10 @@ executable gemini-browser
 
         Utils.ParseUtil,
         
+        Test.MyQuickCheck,
         Test.Protocol.Parser.TestRequest,
         Test.Protocol.Parser.TestResponse,
         Test.Protocol.Parser.TestGemtextParser,
-        Test.Utils.ParseUtil,
 
     -- Directories containing source files.
     hs-source-dirs:   app
