@@ -4,7 +4,7 @@ module Test.Protocol.Parser.TestGemtextParser (
     testGemtextParser
 ) where
 
-import Test.Utils.ParseUtil (testParserIO)
+import Utils.ParseUtil (testParserIO)
 import Protocol.Data.Response
 import Protocol.Parser.Response
 import Control.Monad.State.Lazy (evalStateT)

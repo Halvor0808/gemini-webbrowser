@@ -5,7 +5,7 @@ module Test.Protocol.Parser.TestRequest (
 )
 where
 
-import Test.Utils.ParseUtil (testParserIO)
+import Utils.ParseUtil (testParserIO)
 import Protocol.Parser.Request
 import Protocol.Data.Request (Url(..))
 import Data.Attoparsec.ByteString (IResult(..))

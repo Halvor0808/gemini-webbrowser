@@ -60,7 +60,6 @@ executable gemini-browser
         Test.Protocol.Parser.TestRequest,
         Test.Protocol.Parser.TestResponse,
         Test.Protocol.Parser.TestGemtextParser,
-        Test.Utils.ParseUtil,
 
     -- Directories containing source files.
     hs-source-dirs:   app

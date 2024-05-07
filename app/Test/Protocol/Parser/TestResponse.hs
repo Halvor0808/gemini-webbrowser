@@ -5,7 +5,7 @@ module Test.Protocol.Parser.TestResponse (
 ) 
 where
 
-import Test.Utils.ParseUtil (testParserIO)
+import Utils.ParseUtil (testParserIO)
 import Protocol.Parser.Response
 import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
 import Utils.ParseUtil (pParameters)
