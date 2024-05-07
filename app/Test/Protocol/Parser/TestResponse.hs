@@ -5,12 +5,14 @@ module Test.Protocol.Parser.TestResponse (
 ) 
 where
 
-import Test.Utils.ParseUtil (badParseTest)
+import Test.Utils.ParseUtil (badParseTest, testParser)
 import Protocol.Parser.Response
 import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
 import Utils.ParseUtil (pParameters)
 
+import Data.Attoparsec.ByteString.Char8 (IResult(..))
 import qualified Data.ByteString.Char8 as C8
+import Protocol.Data.Response (StatusCode(..))
 
 testResponse :: IO ()
 testResponse = do
@@ -23,12 +25,12 @@ testResponse = do
 testStatusCode :: IO ()
 testStatusCode = do
   putStrLn "----- StatusCode: -----"
-  badParseTest pStatusCode "01"
-  badParseTest pStatusCode "10"
-  badParseTest pStatusCode "20"
-  badParseTest pStatusCode "35"
-  badParseTest pStatusCode "69"
-  badParseTest pStatusCode "70"
+  print $ testParser pStatusCode "01" (Fail "" [] "" )
+  print $ testParser pStatusCode "10" (Done "" (InputCode   1 0))
+  print $ testParser pStatusCode "20" (Done "" (SuccessCode 2 0))
+  print $ testParser pStatusCode "35" (Done "" (RedirCode   3 5))
+  print $ testParser pStatusCode "69" (Done "" (RequireCertificateCode 6 9))
+  print $ testParser pStatusCode "70" (Fail "" [] "")
 
 testParameters :: IO ()
 testParameters = do
