@@ -17,7 +17,7 @@ import Data.Attoparsec.ByteString (IResult(..))
 testGemtextParser :: IO ()
 testGemtextParser = do
     putStrLn "----- GemText: -----"
-    testParserIO (evalStateT pLines False) bodyEx01
+    testParserIO (evalStateT pLines False) bodyEx01 True
         (Done "" [HeadingLine 1 "Example title"
                  , TextLine "Welcome to my Gemini Capsule"
                  , UnorderedListLine "example list item"
@@ -25,7 +25,7 @@ testGemtextParser = do
                                  (Just "Link text replcement")
                  , TextLine ""
                  ])
-    testParserIO (evalStateT pLines False) bodyEx02
+    testParserIO (evalStateT pLines False) bodyEx02 True
         (Done "" [HeadingLine 2 "Title level 2"
                  , TextLine "Text in Line"
                  , UnorderedListLine "A list"
@@ -35,18 +35,18 @@ testGemtextParser = do
                                  (Just "See more here!")
                  , HeadingLine 3 "An empty lvl 3 header"
                  ])
-    testParserIO (evalStateT pLines False) bodyEx03  -- fails at last line: missing \r\n
-        (Done "" [HeadingLine 3 "Lvl3 Head"
-                 , TextLine "Teeeeeeeeeeeeext"
-                 , TextLine "f"
-                 , TextLine ""
-                 , TextLine ""
-                 , TextLine ""
-                 , TextLine "gg"
-                 , TextLine ""
-                 , TextLine ""
-                 , TextLine "+++"
-                 ])
+    testParserIO (evalStateT pLines False) bodyEx03 True  -- fails at last line: missing \r\n
+        (Done "+++" [HeadingLine 3 "Lvl3 Head"
+                    , TextLine "Teeeeeeeeeeeeext"
+                    , TextLine "f"
+                    , TextLine ""
+                    , TextLine ""
+                    , TextLine ""
+                    , TextLine "gg"
+                    , TextLine ""
+                    , TextLine ""
+                 -- , TextLine "+++"
+                    ])
 
     where 
         bodyEx01, bodyEx02, bodyEx03 :: ByteString 

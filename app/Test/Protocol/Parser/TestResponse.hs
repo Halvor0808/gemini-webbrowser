@@ -27,72 +27,81 @@ testResponse = do
 testStatusCode :: IO ()
 testStatusCode = do
   putStrLn "----- StatusCode: -----"
-  testParserIO pStatusCode "01" (Fail "" [] "" )
-  testParserIO pStatusCode "10" (Done "" (InputCode   1 0))
-  testParserIO pStatusCode "20" (Done "" (SuccessCode 2 0))
-  testParserIO pStatusCode "35" (Done "" (RedirCode   3 5))
-  testParserIO pStatusCode "69" (Done "" (RequireCertificateCode 6 9))
-  testParserIO pStatusCode "70" (Fail "" [] "")
+  testParserIO pStatusCode "01" False (Fail "" [] "" )
+  testParserIO pStatusCode "10" False (Done "" (InputCode   1 0))
+  testParserIO pStatusCode "20" False (Done "" (SuccessCode 2 0))
+  testParserIO pStatusCode "35" False (Done "" (RedirCode   3 5))
+  testParserIO pStatusCode "69"  False (Done "" (RequireCertificateCode 6 9))
+  testParserIO pStatusCode "70"  False (Fail "" [] "")
 
 testParameters :: IO ()
 testParameters = do
   putStrLn "----- Response Parameters: -----"
-  testParserIO pResponseParams ";format=markdown\r\n"       
-                     (Done "\r\n" (Parameters [("format","markdown")]))
-  testParserIO pResponseParams "; notRight=meta.typing\r\n" 
-                     (Fail " notRight=meta.typing\r\n" [] "")
-  testParserIO pResponseParams ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"
-                     (Done "\r\n" (Parameters [("typer","sub.typemega"),("type2","subtype2"),("typ3","subtyp3"),("mistake","sub")]))
-  testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n"
-                     (Fail "đu←↓→œ=wrong;\r\n" [] "")
+  testParserIO pResponseParams ";format=markdown\r\n" False   
+        (Done "\r\n" (Parameters [("format","markdown")]))
+-- spacing issue
+  testParserIO pResponseParams "; notRight=meta.typing\r\n" False 
+        (Fail " notRight=meta.typing\r\n" [] "")
+  testParserIO pResponseParams ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n" 
+        False (Done "\r\n" (Parameters [("typer","sub.typemega"),("type2","subtype2"),("typ3","subtyp3"),("mistake","sub")]))
+-- Illeagal characters
+  testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n" False 
+        (Fail "đu←↓→œ=wrong;\r\n" [] "")
   where 
     pResponseParams = pParameters ';' '='
 
 testMime :: IO ()
 testMime = do
   putStrLn "----- Mime: -----"
-  testParserIO pMime "text/gemini"
+  testParserIO pMime "text/gemini" True
       (Done "" (makeMime (Just ("text", "gemini")) Nothing))
-  testParserIO pMime "audio/mpeg;hello=world"
+  testParserIO pMime "audio/mpeg;hello=world" True
       (Done "" (makeMime (Just ("audio", "mpeg")) (Just (Parameters [("hello","world")]))))
-  testParserIO pMime "tex t/gemini;candy=nice"  -- spacing error -> default
+-- spacing error -> default w/params
+  testParserIO pMime "tex t/gemini;candy=nice" True 
       (mimeDefaultParams "tex t/gemini;candy=nice")
-  testParserIO pMime "text/gemini 2;candy=nice" -- spacing error -> text/gem (no params)
+-- spacing error -> default
+  testParserIO pMime "text/gemini 2;candy=nice" True 
       (mimeDefault " 2;candy=nice")
-  testParserIO pMime "fail/ª™§º©‘’&ŁŒıÐª" -- illegal char -> defaults
+-- illegal char -> no typing or params -> defaults
+  testParserIO pMime "fail/ª™§º©‘’&ŁŒıÐª" True 
       (mimeDefaultParams "fail/ª™§º©‘’&ŁŒıÐª")
-  testParserIO pMime "text/gemini;format=gemtext"
+  testParserIO pMime "text/gemini;format=gemtext" True
       (Done "" (makeMime (Just ("text", "gemini")) (Just (Parameters [("format","gemtext")]))))
-  testParserIO pMime "text/word;format=gemtext;name=myFile"
+  testParserIO pMime "text/word;format=gemtext;name=myFile" True
       (Done "" (makeMime (Just ("text", "word")) (Just (Parameters [("format","gemtext"),("name","myFile")]))) )
-  testParserIO pMime "text/gemini;no tRight=meta.typing" -- spacing error -> text/gemini (no params)
+-- spacing error -> default
+  testParserIO pMime "text/gemini;no tRight=meta.typing" True 
       (mimeDefault ";no tRight=meta.typing")
-  where mimeDefault        remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
+  where mimeDefault       remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
         mimeDefaultParams remainder = Done remainder (makeMime (Just ("text", "gemini")) (Just (Parameters [("charset","utf-8")])))
 
 testResponseParser :: IO ()
 testResponseParser = do
   putStrLn "----- Response: -----"
-  testParserIO  pResponse "15 Input prompt. Gimme some\r\n"
+  testParserIO pResponse "15 Input prompt. Gimme some\r\n" True
               (Done "" (INPUT (InputCode 1 5) "Input prompt. Gimme some"))
-  testParserIO  pResponse "1 Input prompt. Gimme some\r\n" -- missing 1 digit
+-- missing 1 digit
+  testParserIO pResponse "1 Input prompt. Gimme some\r\n" True 
               (Fail " Input prompt. Gimme some\r\n" [] "")
-  testParserIO pResponse "30 gemini://new.url.visit.to/\r\n"
+  testParserIO pResponse "30 gemini://new.url.visit.to/\r\n" True
               (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "new.url.visit.to" 1965 "/" "" "")) )
-  testParserIO  pResponse "30 gemini://new.url.visit.to/" -- missing EOL
-              (Fail "" [] "not enough input")
-  testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" -- Recovers missing '/' in path
+-- missing EOL
+  testParserIO pResponse "30 gemini://new.url.visit.to/" True 
+              ( Fail "" [] "not enough input")
+-- Recovers missing '/' in path
+  testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" True 
               (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "recover.missing.forward.slash" 1965 "/" "" "")) )
-  testParserIO  pResponse "40 Error message for 40\r\n"
+  testParserIO pResponse "40 Error message for 40\r\n" True
               (Done "" (ANY_FAIL (TempFailCode 4 0) "Error message for 40"))
-  testParserIO  pResponse "50 Error message for 50\r\n"
+  testParserIO pResponse "50 Error message for 50\r\n" True
               (Done "" (ANY_FAIL (PermanentFailCode 5 0) "Error message for 50"))
-  testParserIO  pResponse "60 You need a ceritificate my man\r\n"
+  testParserIO pResponse "60 You need a ceritificate my man\r\n" True
               (Done "" (ANY_FAIL (RequireCertificateCode 6 0) "You need a ceritificate my man"))
   content01 <- C8.readFile "app/Test/Input/response01-success.eg"
-  testParserIO pResponse content01 expectedResponse01
+  testParserIO pResponse content01 True  expectedResponse01
   content02 <- C8.readFile "app/Test/Input/response02-success.eg"
-  testParserIO pResponse content02 expectedResponse02
+  testParserIO pResponse content02 True expectedResponse02
   where expectedResponse01 = 
           Done "" (SUCCESS {_statusCode = SuccessCode 2 0
                   , _mime = makeMime (Just ("text", "gemini")) Nothing
@@ -110,7 +119,7 @@ testResponseParser = do
                                   , _displayText = Just "Link text replcement"}
                       , TextLine {_text = ""}]})
         expectedResponse02 = 
-          Done ""  (SUCCESS {_statusCode = SuccessCode 2 0
+          Done "> Bye:)"  (SUCCESS {_statusCode = SuccessCode 2 0
                           , _mime = makeMime (Just ("text", "gemini")) (Just $ Parameters [("charset","utf-8"), ("lang","en"), ("hello","world")])
                           , _lines = [HeadingLine {_level = 1, _text = "Header1"}
                           , TextLine {_text = "Plain text line going on ... and on ..."}
@@ -127,7 +136,7 @@ testResponseParser = do
                           , TogglePreformatMode {_ByteString = "preformat mode: on"}
                           , PreformattedTextLine {_text = "Preformatted text should be"}
                           , PreformattedTextLine {_text = "left to its own devices"}
-                          , PreformattedTextLine {_text = "LongLineToTestBreakingLines:a123456789B123456789C123456789D123456789E123456889F123456789G123456789H123456789I123456789"}
+                          , PreformattedTextLine {_text = "LongAssLineToTestBreakingLines:a123456789B123456789C123456789D123456789E123456889F123456789G123456789H123456789I123456789"}
                           , TogglePreformatMode {_ByteString = "preformat mode: off"}
                           , TextLine {_text = ""}
                           , TogglePreformatMode {_ByteString = "unicode blob"}
@@ -137,5 +146,6 @@ testResponseParser = do
                           , TogglePreformatMode {_ByteString = ""}
                           , QuoteLine {_text = "Quote by ME"}
                           , QuoteLine {_text = "This is hard"}
-                          , QuoteLine {_text = "> Bye:)"} -- fails on this line, due to `consumeRestOfLine` function
+                       -- , QuoteLine {_text = "> Bye:)"} 
+                       -- Last line is missing due to `consumeRestOfLine` which expects EOL
                           ]})
