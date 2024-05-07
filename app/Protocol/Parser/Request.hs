@@ -31,7 +31,11 @@ pGeminiUrl = pUrlGeneral scheme
 pUrl :: Parser Url
 pUrl = pUrlGeneral pScheme
 
-{- Stolen from ChatGPT 🥹-}
+pScheme :: Parser ByteString
+pScheme = takeWhile1 (`elem` legalChars) <* "://"
+    where
+      legalChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "+-."
+
 pUrlGeneral :: Parser ByteString -> Parser Url
 pUrlGeneral schemeParser = do
   scheme    <- schemeParser
@@ -41,11 +45,6 @@ pUrlGeneral schemeParser = do
   query     <- option "" (char '?' >> takeTill isEOL)
   fragment  <- option "" (char '#' >> takeTill isEOL)
   return (Url scheme authority port path query fragment)
-
-pScheme :: Parser ByteString
-pScheme = takeWhile1 (`elem` legalChars) <* "://"
-    where
-      legalChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "+-."
 
 pAuthority :: Parser ByteString
 pAuthority = Atto.takeWhile (\c -> c /= '/' && c /= '?' && c /= '#' && c /= '\r' && c /= '\n')
