@@ -12,7 +12,7 @@ import Utils.ParseUtil (pParameters)
 
 import Data.Attoparsec.ByteString.Char8 (IResult(..))
 import qualified Data.ByteString.Char8 as C8
-import Protocol.Data.Response (StatusCode(..))
+import Protocol.Data.Response (StatusCode(..), Parameters (Parameters))
 
 testResponse :: IO ()
 testResponse = do
@@ -35,10 +35,14 @@ testStatusCode = do
 testParameters :: IO ()
 testParameters = do
   putStrLn "----- Response Parameters: -----"
-  badParseTest pResponseParams ";format=markdown\r\n" -- works
-  badParseTest pResponseParams "; notRight=meta.typing\r\n" -- fails
-  badParseTest pResponseParams ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n" -- works
-  badParseTest pResponseParams ";đu←↓→œ=wrong;\r\n" -- fails
+  print $ testParser pResponseParams ";format=markdown\r\n"       
+                     (Done "\r\n" (Parameters [("format","markdown")]))
+  print $ testParser pResponseParams "; notRight=meta.typing\r\n" 
+                     (Fail " notRight=meta.typing\r\n" [] "")
+  print $ testParser pResponseParams ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"
+                     (Done "\r\n" (Parameters [("typer","sub.typemega"),("type2","subtype2"),("typ3","subtyp3"),("mistake","sub")]))
+  print $ testParser pResponseParams ";đu←↓→œ=wrong;\r\n"
+                     (Fail "đu←↓→œ=wrong;\r\n" [] "")
   where 
     pResponseParams = pParameters ';' '='
 
