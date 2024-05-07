@@ -12,7 +12,7 @@ import Utils.ParseUtil (pParameters)
 
 import Data.Attoparsec.ByteString.Char8 (IResult(..))
 import qualified Data.ByteString.Char8 as C8
-import Protocol.Data.Response (StatusCode(..), Parameters (Parameters))
+import Protocol.Data.Response (StatusCode(..), Parameters (Parameters), makeMime)
 
 testResponse :: IO ()
 testResponse = do
@@ -49,15 +49,24 @@ testParameters = do
 testMime :: IO ()
 testMime = do
   putStrLn "----- Mime: -----"
-  badParseTest pMime "text/gemini" -- works
-  badParseTest pMime "audio/mpeg;hello=world" -- works
-  badParseTest pMime "tex t/gemini;candy=nice" -- fails: spacing -> defaults
-  badParseTest pMime "text/gem ini;candy=nice" -- fails: spacing -> text/gem (no params)
-  badParseTest pMime "fail/ª™§º©‘’&ŁŒıÐª" -- fails: illegal chars -> defaults
-  badParseTest pMime "text/gemini;format=gemtext" -- works
-  badParseTest pMime "text/word;format=gemtext;name=myFile" -- works
-  badParseTest pMime "text/spacingError;no tRight=meta.typing" -- fails: spacing -> text/spacingError (no params)
-
+  print $ testParser pMime "text/gemini"
+      (Done "" (makeMime (Just ("text", "gemini")) Nothing))
+  print $ testParser pMime "audio/mpeg;hello=world"
+      (Done "" (makeMime (Just ("audio", "mpeg")) (Just (Parameters [("hello","world")]))))
+  print $ testParser pMime "tex t/gemini;candy=nice"  -- spacing error -> default
+      (mimeDefaultParams "tex t/gemini;candy=nice")
+  print $ testParser pMime "text/gemini 2;candy=nice" -- spacing error -> text/gem (no params)
+      (mimeDefault " 2;candy=nice")
+  print $ testParser pMime "fail/ª™§º©‘’&ŁŒıÐª" -- illegal char -> defaults
+      (mimeDefaultParams "fail/ª™§º©‘’&ŁŒıÐª")
+  print $ testParser pMime "text/gemini;format=gemtext"
+      (Done "" (makeMime (Just ("text", "gemini")) (Just (Parameters [("format","gemtext")]))))
+  print $ testParser pMime "text/word;format=gemtext;name=myFile"
+      (Done "" (makeMime (Just ("text", "word")) (Just (Parameters [("format","gemtext"),("name","myFile")]))) )
+  print $ testParser pMime "text/gemini;no tRight=meta.typing" -- spacing error -> text/gemini (no params)
+      (mimeDefault ";no tRight=meta.typing")
+  where mimeDefault        remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
+        mimeDefaultParams remainder = Done remainder (makeMime (Just ("text", "gemini")) (Just (Parameters [("charset","utf-8")])))
 
 testResponseParser :: IO ()
 testResponseParser = do
