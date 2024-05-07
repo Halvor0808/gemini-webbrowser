@@ -1,16 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Utils.ParseUtil (
-    badParseTest,
     testParserIO,
 ) where
 
 import Data.ByteString.Char8 hiding (putStrLn)
 import Data.Attoparsec.ByteString.Char8
-
-
-badParseTest :: (Show a) => Parser a -> ByteString -> IO ()
-badParseTest p input = print $ feed (parse p input) empty
-
 
 -- prints result of parse test in stdout with info if test failed.
 testParserIO :: (Show r, Eq r) => Parser r -> ByteString -> Bool ->  IResult ByteString r -> IO ()
