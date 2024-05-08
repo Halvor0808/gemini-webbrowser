@@ -2,13 +2,12 @@
 
 module Test.Protocol.Parser.TestResponse (
    testResponse
-) 
+)
 where
 
-import Utils.ParseUtil (testParserIO)
+import Utils.ParseUtil ( testParserIO, pParameters )
 import Protocol.Parser.Response
 import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
-import Utils.ParseUtil (pParameters)
 
 import Data.Attoparsec.ByteString.Char8 (IResult(..))
 import qualified Data.ByteString.Char8 as C8
@@ -40,17 +39,17 @@ testParameters = do
   simple
   spaceErr
   complex
-  illegalCharErr  
-  where 
+  illegalCharErr
+  where
     pResponseParams = pParameters ';' '='
-    simple          = testParserIO pResponseParams ";format=markdown\r\n" False 
+    simple          = testParserIO pResponseParams ";format=markdown\r\n" False
                           (Done "\r\n" (Parameters [("format","markdown")]))
-    spaceErr        = testParserIO pResponseParams "; notRight=meta.typing\r\n" False 
+    spaceErr        = testParserIO pResponseParams "; notRight=meta.typing\r\n" False
                           (Fail " notRight=meta.typing\r\n" [] "")
-    complex         = testParserIO pResponseParams 
-                          ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"  False 
+    complex         = testParserIO pResponseParams
+                          ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"  False
                           (Done "\r\n" (Parameters [("typer","sub.typemega"),("type2","subtype2"),("typ3","subtyp3"),("mistake","sub")]))
-    illegalCharErr  = testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n" False 
+    illegalCharErr  = testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n" False
                           (Fail "đu←↓→œ=wrong;\r\n" [] "")
 
 
@@ -63,7 +62,7 @@ testMime = do
   spaceErrDefParam
   spaceErrDefault
   illegalCharDef
-  where 
+  where
     mimeDefault       remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
     mimeDefaultParams remainder = Done remainder (makeMime (Just ("text", "gemini")) (Just (Parameters [("charset","utf-8")])))
     --
@@ -72,15 +71,15 @@ testMime = do
     simpleParams     = testParserIO pMime "text/gemini;format=gemtext" True
                           (Done "" (makeMime (Just ("text", "gemini")) (Just (Parameters [("format","gemtext")]))))
     multiParams      = testParserIO pMime "text/word;format=gemtext;name=myFile" True
-                          (Done "" (makeMime (Just ("text", "word")) 
+                          (Done "" (makeMime (Just ("text", "word"))
                           (Just (Parameters [("format","gemtext"),("name","myFile")]))) )
-    spaceErrDefParam = testParserIO pMime "tex t/gemini;candy=nice" True 
+    spaceErrDefParam = testParserIO pMime "tex t/gemini;candy=nice" True
                           (mimeDefaultParams "tex t/gemini;candy=nice")
-    spaceErrDefault  = testParserIO pMime "text/gemini 2;candy=nice" True 
+    spaceErrDefault  = testParserIO pMime "text/gemini 2;candy=nice" True
                           (mimeDefault " 2;candy=nice")
-    spaceErrDefault2 = testParserIO pMime "text/gemini;no tRight=meta.typing" True 
+    spaceErrDefault2 = testParserIO pMime "text/gemini;no tRight=meta.typing" True
                           (mimeDefault ";no tRight=meta.typing")
-    illegalCharDef   = testParserIO pMime "fail/ª™§º©‘’&ŁŒıÐª" True 
+    illegalCharDef   = testParserIO pMime "fail/ª™§º©‘’&ŁŒıÐª" True
                           (mimeDefaultParams "fail/ª™§º©‘’&ŁŒıÐª")
 
 testResponseParser :: IO ()
@@ -90,29 +89,29 @@ testResponseParser = do
   missingDigit
   simple30
   missingEOL
-  recoverSlash 
+  recoverSlash
   simpleAnyFail -- error messages (40-69 range)
   content01 <- C8.readFile "app/Test/Input/response01-success.eg"
   testParserIO pResponse content01 True  expectedResponse01
   content02 <- C8.readFile "app/Test/Input/response02-success.eg"
   testParserIO pResponse content02 True expectedResponse02
-  where 
+  where
     simple15      = testParserIO pResponse "15 Input prompt. Gimme some\r\n" True
                       (Done "" (INPUT (InputCode 1 5) "Input prompt. Gimme some"))
-    missingDigit  = testParserIO pResponse "1 Input prompt. Gimme some\r\n" True 
+    missingDigit  = testParserIO pResponse "1 Input prompt. Gimme some\r\n" True
                       (Fail " Input prompt. Gimme some\r\n" [] "")
     simple30      = testParserIO pResponse "30 gemini://new.url.visit.to/\r\n" True
                       (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "new.url.visit.to" 1965 "/" "" "")))
-    missingEOL    = testParserIO pResponse "30 gemini://new.url.visit.to/" True 
+    missingEOL    = testParserIO pResponse "30 gemini://new.url.visit.to/" True
                       (Fail "" [] "not enough input")
-    recoverSlash  = testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" True 
+    recoverSlash  = testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" True
                       (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "recover.missing.forward.slash" 1965 "/" "" "")))
     simpleAnyFail = do
                   testParserIO pResponse "40 Error message for 40\r\n" True
                       (Done "" (ANY_FAIL (TempFailCode 4 0) "Error message for 40"))
                   testParserIO pResponse "60 You need a ceritificate my man\r\n" True
                       (Done "" (ANY_FAIL (RequireCertificateCode 6 0) "You need a ceritificate my man"))
-    expectedResponse01 = 
+    expectedResponse01 =
       Done "" (SUCCESS {_statusCode = SuccessCode 2 0
               , _mime = makeMime (Just ("text", "gemini")) Nothing
               , _lines = [HeadingLine
@@ -128,7 +127,7 @@ testResponseParser = do
                                 , fragment = ""}
                               , _displayText = Just "Link text replcement"}
                   , TextLine {_text = ""}]})
-    expectedResponse02 = 
+    expectedResponse02 =
       Done "> Bye:)"  (SUCCESS {_statusCode = SuccessCode 2 0
                       , _mime = makeMime (Just ("text", "gemini")) (Just $ Parameters [("charset","utf-8"), ("lang","en"), ("hello","world")])
                       , _lines = [HeadingLine {_level = 1, _text = "Header1"}
