@@ -30,14 +30,14 @@ import Lens.Micro
 import qualified Data.Vector as Vec
 import Protocol.Data.Response
 import Protocol.Data.Request
-import Socket (retrievePage, getResponse)
+import Socket (getResponse)
 import Pages
 import Network.URI
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Default.Class
 
 
-data Name =  PageContent | ListContent| SearchField | HelpPage | History
+data Name =  PageContent | ListContent| SearchField | HelpPage | HelpPageContent | History
   deriving (Ord, Eq, Show)
 
 instance Default Name where
@@ -59,7 +59,7 @@ makeLenses ''St
 drawUi :: St -> [Widget Name]
 drawUi st = do
   case F.focusGetCurrent (_focusRing st) of
-    Just HelpPage -> helpPage
+    Just HelpPage -> [helpPage]
     Just History  -> [drawHistory st]
     Just _ -> [ui]
   where
@@ -70,22 +70,25 @@ drawUi st = do
            , B.hBorder
            , bottomText
            ]
-    contentArea = B.hBorderWithLabel (str "Page-content")
-                  <=> padLeftRight 3 (padTop (Pad 1) (pageContent st))
+    contentArea     = B.hBorder <=> padLeftRight 3 (padTop (Pad 1) (pageContent st))
     searchFieldArea = vLimitPercent 15 (hCenter (hLimit 65 searchField)
-                    <=> hCenter (withDefAttr  helpAttr (str "Hit <Enter> to search")))
-    searchField = B.border $ F.withFocusRing (_focusRing st )
-                  (E.renderEditor (str . unlines)) (_searchField st)
-    bottomText = hCenter $ withDefAttr helpAttr $ vBox
-             [ str "Esc/Ctrl-q = quit, Ctrl-e = toggle help. Ctrl-tab = cycle through focus areas."
-             , str ("Focus: " <> maybe "None" show (F.focusGetCurrent $ _focusRing st))
-             , str ("Current Line: " <> maybe "None" (show . snd) (L.listSelectedElement $ _content st))
-             ]
-    helpPage = [viewport HelpPage T.Vertical $ str getHelpPage]
+                      <=> hCenter (withDefAttr  helpAttr (str "Hit <Enter> to search")))
+    searchField     = B.border $ F.withFocusRing (_focusRing st )
+                      (E.renderEditor (str . unlines)) (_searchField st)
+    bottomText      = hCenter $ withDefAttr helpAttr $ vBox
+                      [ str "Esc/Ctrl-q = quit, Ctrl-e = toggle help. Ctrl-tab = cycle through focus areas."
+                      , str ("Focus: " <> maybe "None" show (F.focusGetCurrent $ _focusRing st))
+                      , str ("Current Line: " <> maybe "None" (show . snd) (L.listSelectedElement $ _content st))
+                      ]
+    helpPage        = padTopBottom 10 . hCenter . vLimit 80 . hLimit 80  . B.borderWithLabel (str "Help Page") 
+                      . viewport HelpPage T.Vertical . vLimit 50 $ 
+                      L.renderList (\_ l -> renderLine l) False lines
+                      where
+                        lines = mkList HelpPageContent (linesFromByteString getHelpPage)
 
 pageContent :: St -> Widget Name
 pageContent st =
-  viewport PageContent T.Vertical $ vLimit 30 $
+  viewport PageContent T.Vertical . vLimit 30 $
   L.renderList drawListElement True (_content st)
   where
     isFocused = F.focusGetCurrent (_focusRing st) == Just PageContent
@@ -98,7 +101,7 @@ pageContent st =
 
 drawHistory :: St -> Widget Name
 drawHistory st =
-  padTop (Pad 10) . hCenter . vLimitPercent 50 . hLimit 65  . 
+  padTop (Pad 10) . hCenter . vLimitPercent 50 . hLimit 65  .
   B.borderWithLabel (str "History") $ list
   where list = L.renderListWithIndex renderUrl True (_history st)
         renderUrl i True url  = withDefAttr L.listSelectedAttr . strWrap
@@ -176,9 +179,6 @@ handlePageContentEvent ev =
         zoom content $ M.vScrollBy (M.viewportScroll PageContent) 1
         zoom content $ L.handleListEvent ev
     (T.VtyEvent ev@(V.EvKey V.KEnter [])) -> do
-      -- Resolving selected link:
-      -- If selected line is AbsoluteLink -> query link
-      -- If selected line is RelativeLink -> resolve with link of current page
       list        <- use content
       presentPage <-  urlToUri <$> T.gets _currentPage
       let selectedLine = maybe (TextLine mempty) snd (L.listSelectedElement list)
