@@ -1,41 +1,46 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Protocol.Data.Request where
 
-import Data.ByteString.Char8
-import Network.URI hiding (scheme, authority, port, path, query, fragment)
+import qualified Data.ByteString.UTF8 as BSU
+import Network.URI
+    ( nullURI,
+      nullURIAuth,
+      uriIsAbsolute,
+      URI(..),
+      URIAuth(uriPort, uriRegName) )
 import Data.Maybe (fromJust, fromMaybe)
 
-data Url = Url { scheme :: ByteString
-               , authority :: ByteString
-               , port :: Int
-               , path :: ByteString
-               , query :: ByteString
-               , fragment :: ByteString
+data Url = Url { scheme    :: BSU.ByteString
+               , authority :: BSU.ByteString
+               , port      :: Int
+               , path      :: BSU.ByteString
+               , query     :: BSU.ByteString
+               , fragment  :: BSU.ByteString
                }
-    | Relative { path :: ByteString
-               , query :: ByteString
-               , fragment :: ByteString
+    | Relative { path      :: BSU.ByteString
+               , query     :: BSU.ByteString
+               , fragment  :: BSU.ByteString
                } deriving (Eq, Show)
 
 showUrl :: Url -> String
 showUrl (Url scheme authority port path query frag)
-  | scheme == "" && authority == "" = unpack (path <> query <> frag)
-  | scheme == ""                    = unpack (authority <> path <> query <> frag)
-  | otherwise                       = unpack (scheme <> "://" <> authority <> path <> query <> frag)
-showUrl (Relative path query frag) = unpack (path <> query <> frag)
+  | scheme == "" && authority == "" = BSU.toString (path <> query <> frag)
+  | scheme == ""                    = BSU.toString (authority <> path <> query <> frag)
+  | otherwise                       = BSU.toString (scheme <> "://" <> authority <> path <> query <> frag)
+showUrl (Relative path query frag)  = BSU.toString (path <> query <> frag)
 
 uriToUrl :: URI -> Url
 uriToUrl uri
- | uriIsAbsolute uri = Url { scheme = pack scheme
-                           , authority = pack $ uriRegName uriAuth
-                           , port = port
-                           , path = pack $ uriPath uri
-                           , query = pack $ uriQuery uri
-                           , fragment = pack $ uriFragment uri
+ | uriIsAbsolute uri = Url { scheme     =  BSU.fromString scheme
+                           , authority  =  BSU.fromString $ uriRegName uriAuth
+                           , port       = port
+                           , path       =  BSU.fromString $ uriPath uri
+                           , query      =  BSU.fromString $ uriQuery uri
+                           , fragment   =  BSU.fromString $ uriFragment uri
                            }
-  | otherwise   = Relative { path = pack $ uriPath uri
-                           , query = pack $ uriQuery uri
-                           , fragment = pack $ uriFragment uri
+  | otherwise   = Relative { path       =  BSU.fromString $ uriPath uri
+                           , query      =  BSU.fromString $ uriQuery uri
+                           , fragment   =  BSU.fromString $ uriFragment uri
                            }
   where
     scheme = Prelude.init $ uriScheme uri
@@ -47,17 +52,17 @@ uriToUrl uri
 
 urlToUri :: Url -> URI
 urlToUri url
-  | Relative {} <- url = nullURI { uriPath = unpack $ path url
-                                 , uriQuery = unpack $ query url
-                                 , uriFragment = unpack $ fragment url
+  | Relative {} <- url = nullURI { uriPath      = BSU.toString $ path url
+                                 , uriQuery     = BSU.toString $ query url
+                                 , uriFragment  = BSU.toString $ fragment url
                                  }
-  | otherwise          = URI     { uriScheme = unpack scheme'
+  | otherwise          = URI     { uriScheme    = BSU.toString scheme'
                                  , uriAuthority = Just nullURIAuth 
-                                              { uriRegName = unpack $ authority url
+                                              { uriRegName = BSU.toString $ authority url
                                               , uriPort = ':' : show (port url) }
-                                 , uriPath = unpack $ path url
-                                 , uriQuery = unpack $ query url
-                                 , uriFragment = unpack $ fragment url
+                                 , uriPath      = BSU.toString $ path url
+                                 , uriQuery     = BSU.toString $ query url
+                                 , uriFragment  = BSU.toString $ fragment url
                                  }
   where 
     port' = if port url == 1965 then "" else ":" <> show (port url)

@@ -13,7 +13,7 @@ import Protocol.Data.Response (Line(..), Response(..))
 import Protocol.Data.Request (Url(..))
 
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
-import Data.ByteString.Char8 as C8 (pack)
+import Data.ByteString.UTF8 as BSU
 import Data.ByteString as B (readFile)
 
 getTestPage :: IO [Line]
@@ -53,5 +53,5 @@ getLocalWebPage :: FilePath -> IO [Line]
 getLocalWebPage filePath = do
   contents <- B.readFile filePath 
   case runPLines contents of
-    Left err -> return [TextLine $ pack err]
+    Left err -> return [TextLine $ BSU.fromString err]
     Right response -> return response
