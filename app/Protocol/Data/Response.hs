@@ -8,28 +8,27 @@ module Protocol.Data.Response (
   Line(..),
 ) where
 
-import Data.ByteString ( ByteString)
 import Data.List (intercalate)
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.UTF8 as BSU
 
 import Protocol.Data.Request (Url)
 
-data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: ByteString}
+data Response = INPUT       {_statusCode :: StatusCode, _prompt  :: BSU.ByteString}
               | SUCCESS     {_statusCode :: StatusCode, _mime    :: Maybe MIME,  _lines :: [Line]}
               | REDIRECT    {_statusCode :: StatusCode, _url     :: Url       }
-              | ANY_FAIL    {_statusCode :: StatusCode, _failMsg :: ByteString} -- temporary replacement for error codes 40,50,60
+              | ANY_FAIL    {_statusCode :: StatusCode, _failMsg :: BSU.ByteString} -- temporary replacement for error codes 40,50,60
               -- | TEMP_FAIL   StatusCode     FailureMessage
               -- | PERM_FAIL   StatusCode     FailureMessage
               -- | CLIENT_CERT StatusCode     FailureMessage
               deriving (Eq, Show)
 
-data Line = TextLine             { _text        :: ByteString }
-          | TogglePreformatMode  { _ByteString  :: ByteString }
-          | PreformattedTextLine { _text        :: ByteString }
-          | UnorderedListLine    { _text        :: ByteString }
-          | QuoteLine            { _text        :: ByteString }
-          | HeadingLine          { _level       :: Int        , _text        ::       ByteString}
-          | LinkLine             { _link        :: Url        , _displayText :: Maybe ByteString}
+data Line = TextLine             { _text        :: BSU.ByteString }
+          | TogglePreformatMode  { _ByteString  :: BSU.ByteString }
+          | PreformattedTextLine { _text        :: BSU.ByteString }
+          | UnorderedListLine    { _text        :: BSU.ByteString }
+          | QuoteLine            { _text        :: BSU.ByteString }
+          | HeadingLine          { _level       :: Int        , _text        ::       BSU.ByteString}
+          | LinkLine             { _link        :: Url        , _displayText :: Maybe BSU.ByteString}
           deriving (Show, Eq)
 
 data StatusCode = InputCode              Int Int
@@ -59,8 +58,8 @@ getStatusCode x y =
     6 -> RequireCertificateCode x y
     _ -> error $ "Invalid status code " <> show x <> show y -- shouldn't ever fail here. Should fail at `pStatusCode`
 
-type MainMimeType = ByteString
-type SubMimeType = ByteString
+type MainMimeType = BSU.ByteString
+type SubMimeType = BSU.ByteString
 data MIME = MIME { _mainType   ::  MainMimeType
                  , _subType    ::  SubMimeType
                  , _parameters ::  Maybe Parameters
@@ -72,15 +71,15 @@ makeMime (Just (typ, subtyp)) p = Just $ MIME typ subtyp p
 makeMime Nothing              _ = Nothing
 
 instance Show MIME where
-  show (MIME m s (Just p)) = B.unpack m ++ "/" ++ B.unpack s ++ show p
-  show (MIME m s Nothing ) = B.unpack m ++ "/" ++ B.unpack s
+  show (MIME m s (Just p)) = BSU.toString m ++ "/" ++ BSU.toString s ++ show p
+  show (MIME m s Nothing ) = BSU.toString m ++ "/" ++ BSU.toString s
 
-newtype Parameters = Parameters [(ByteString, ByteString)]
+newtype Parameters = Parameters [(BSU.ByteString, BSU.ByteString)]
   deriving (Eq)
 
 instance Show Parameters where
   show (Parameters []) = ""
   show (Parameters xs) = ("[" ++) . ( ++ "]") . intercalate ", " $ map showParam xs
     where
-      showParam :: (ByteString, ByteString) -> String
-      showParam (k,v) = B.unpack k ++ "=" ++ B.unpack v
+      showParam :: (BSU.ByteString, BSU.ByteString) -> String
+      showParam (k,v) = BSU.toString k ++ "=" ++ BSU.toString v

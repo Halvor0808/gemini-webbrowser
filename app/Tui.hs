@@ -20,7 +20,7 @@ import Brick (style)
 import Graphics.Vty.Attributes
 import qualified Graphics.Vty as V
 
-import Data.ByteString.Char8 (pack, unpack)
+import qualified Data.ByteString.UTF8 as BSU
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as Txt
 import Text.Wrap
@@ -108,27 +108,27 @@ drawHistory st =
 
 renderLine :: Line -> Widget n
 renderLine (TextLine "") = strWrap " "
-renderLine (TextLine t) = strWrap $ unpack t
+renderLine (TextLine t) = strWrap $ BSU.toString t
 renderLine (LinkLine url Nothing) =
   withDefAttr linkAttr $ hyperlink (Txt.pack (show url)) . strWrap $ showUrl url
 renderLine (LinkLine url (Just s)) =
-  withDefAttr linkAttr (hyperlink (Txt.pack (show url)) $ strWrap $ unpack s)
+  withDefAttr linkAttr (hyperlink (Txt.pack (show url)) $ strWrap $ BSU.toString s)
 renderLine (TogglePreformatMode "") = withDefAttr preformatAttr (strWrap "```")
 renderLine (TogglePreformatMode t) =
-  withDefAttr preformatAttr (strWrap $ "``` " <> unpack t)
+  withDefAttr preformatAttr (strWrap $ "``` " <> BSU.toString t)
 renderLine (PreformattedTextLine t) =
-  withDefAttr preformatAttr $ strWrapWith preSetting (unpack t)
+  withDefAttr preformatAttr $ strWrapWith preSetting (BSU.toString t)
   where
     preSetting = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
 renderLine (HeadingLine i t) =
-  vBox [str "\n", indent <+> withDefAttr  headingAttr (strWrap $ unpack t)]
+  vBox [str "\n", indent <+> withDefAttr  headingAttr (strWrap $ BSU.toString t)]
   where indent = str $ concat (replicate (i - 1) "@ ")
 renderLine (UnorderedListLine t) =
-  strWrapWith listSetting $ unpack t
+  strWrapWith listSetting $ BSU.toString t
   where
     listSetting = defaultWrapSettings { fillStrategy = FillPrefix "  * ", fillScope = FillAll }
 renderLine (QuoteLine t) =
-  withDefAttr  quoteAttr $ strWrapWith qSetting $ unpack t
+  withDefAttr  quoteAttr $ strWrapWith qSetting $ BSU.toString t
   where
     qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
 

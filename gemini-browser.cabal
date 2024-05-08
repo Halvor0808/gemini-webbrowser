@@ -28,6 +28,7 @@ executable gemini-browser
         attoparsec,
         brick,
         text,
+        utf8-string,
         word-wrap,
         bytestring,
         vty,
