@@ -1,4 +1,20 @@
-# Gemini Web Browser -- Home Page
+# Home Page
+
+Welcome to your Gemini Home!
+
+## Keyboard bindings
+
+```
+Ctrl+q / Esc       = Exit application
+Tab                = Toggle between which component is in focus.
+Ctrl+w             = Show current page
+Ctrl+e             = Toggle Help menu
+Ctrl+r             = Toggle History menu
+Arrow key UP       = Scroll content UP
+Arrow key DOWN     = Scroll content DOWN
+<Enter> button     = When cursor on URL, navigate to URL"
+
+```
 
 ## Useful Links
 => gemini://geminiprotocol.net/ Gemini Protocol's homepage.
