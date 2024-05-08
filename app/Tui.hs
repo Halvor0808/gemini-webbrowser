@@ -117,20 +117,20 @@ renderLine (TogglePreformatMode "") = withDefAttr preformatAttr (strWrap "```")
 renderLine (TogglePreformatMode t) =
   withDefAttr preformatAttr (strWrap $ "``` " <> BSU.toString t)
 renderLine (PreformattedTextLine t) =
-  withDefAttr preformatAttr $ strWrapWith preSetting (BSU.toString t)
+  withDefAttr preformatAttr $ strWrapWith dontWrapSettings (BSU.toString t)
   where
-    preSetting = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
+    dontWrapSettings = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
 renderLine (HeadingLine i t) =
-  vBox [str "\n", indent <+> withDefAttr  headingAttr (strWrap $ BSU.toString t)]
-  where indent = str $ concat (replicate (i - 1) "@ ")
+  str (concat (replicate (i - 1) "@ "))
+  <+> withDefAttr headingAttr (strWrap $ BSU.toString t)
 renderLine (UnorderedListLine t) =
-  strWrapWith listSetting $ BSU.toString t
-  where
-    listSetting = defaultWrapSettings { fillStrategy = FillPrefix "  * ", fillScope = FillAll }
+  str "  * " <+> strWrapWith wrapSettings (BSU.toString t)
 renderLine (QuoteLine t) =
-  withDefAttr  quoteAttr $ strWrapWith qSetting $ BSU.toString t
-  where
-    qSetting = defaultWrapSettings { fillStrategy = FillPrefix "  | ", fillScope = FillAll }
+  withDefAttr quoteAttr  (str "  | ")
+  <+> withDefAttr quoteAttr (strWrapWith wrapSettings $ BSU.toString t)
+
+wrapSettings :: WrapSettings
+wrapSettings = WrapSettings {fillStrategy = FillIndent 1, fillScope = FillAfterFirst, breakLongWords = True, preserveIndentation = False}
 
 ----- Event handling functions ------
 
