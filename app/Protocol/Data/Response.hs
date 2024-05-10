@@ -10,6 +10,7 @@ module Protocol.Data.Response (
 
 import Data.List (intercalate)
 import qualified Data.ByteString.UTF8 as BSU
+import Data.Default.Class
 
 import Protocol.Data.Request (Url)
 
@@ -65,8 +66,11 @@ data MIME = MIME { _mainType   ::  MainMimeType
                  , _parameters ::  Maybe Parameters
                  } deriving (Eq)
 
+instance Default MIME where
+  def = MIME "text" "gemini" (Just $ Parameters [("charset", "utf-8")])
+
 makeMime :: Maybe (MainMimeType, SubMimeType) -> Maybe Parameters -> Maybe MIME
-makeMime Nothing        Nothing = Just $ MIME "text" "gemini" (Just $ Parameters [("charset", "utf-8")]) -- default to text/gemini
+makeMime Nothing        Nothing = Just def
 makeMime (Just (typ, subtyp)) p = Just $ MIME typ subtyp p
 makeMime Nothing              _ = Nothing
 
