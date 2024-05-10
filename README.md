@@ -1,5 +1,34 @@
 # Gemini Webbrowser
 
+# Build & Setup
+Prerequisites : 
+
+- Haskell is installed. 
+- Cabal version = `3.10.2.1` is installed. 
+- GHC version = `9.4.8` is installed.
+
+Clone repo with preferred method
+
+1. (SSH): `git clone git@github.com:Halvor0808/gemini-webbrowser.git`
+2. (HTTPS): `git https://github.com/Halvor0808/gemini-webbrowser.git`
+
+Change directory to the root of the project: `cd gemini-webbrowser`
+
+## Build & Setup: Graders INF221 
+If you are grading my INF221 submission, please use the git tag `221-submission`.
+
+Checkout to the git tag: `git checkout 221-submission`
+
+There is a `cabal.freeze` file in the repository that will automatically choose the right dependencies.
+Navigate to root of project and then run: `cabal update` & `cabal run`.
+
+
+# Known issues
+- TLS implementation does not work on windows for some servers
+- Apprarently Emojis and other "wide" charcaters are not well supported in Brick. Since they affect the spacing pushing everything along. To fix this it requires a workaround in VTY. Since this is not crucial to my application, I deem it to be outside the scope of this project, and I cannot be bothered.
+- Improve & update Help/control page
+
+
 # TODO
 - [ ] Change to LazyByteStrings
   - [ ] Update program 
@@ -43,8 +72,3 @@ TUI Goal:
 |            basic help             |
 |-----------------------------------|
 ```
-
-# Known issues
-- TLS implementation does not work on windows for some servers
-- Apprarently Emojis and other "wide" charcaters are not well supported in Brick. Since they affect the spacing pushing everything along. To fix this it requires a workaround in VTY. Since this is not crucial to my application, I deem it to be outside the scope of this project, and I cannot be bothered.
-- Improve & update Help/control page
