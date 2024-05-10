@@ -1,5 +1,5 @@
 
-module Test.MyQuickCheck where
+module Main where
 
 import Test.QuickCheck
 
@@ -8,6 +8,12 @@ import Network.URI
 import Control.Monad (liftM3)
 import Data.Char (isAlphaNum)
 import qualified Data.ByteString.UTF8 as BSU
+
+main :: IO ()
+main = do
+  quickCheck prop_convertUrlToUri
+  quickCheck prop_convertingUrlToUriAndBack
+
 
 instance Arbitrary Url where
     arbitrary = oneof [arbitraryUrl, arbitraryRelative]
