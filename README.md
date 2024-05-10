@@ -15,9 +15,11 @@ Clone repo with preferred method
 Change directory to the root of the project: `cd gemini-webbrowser`
 
 ## Build & Setup: Graders INF221 
-If you are grading my INF221 submission, please use the git tag `221-submission`.
+If you are grading my INF221 submission: `git fetch --all`.
 
-Checkout to the git tag: `git checkout 221-submission`
+[git tag 221-submission](https://github.com/Halvor0808/gemini-webbrowser/releases/tag/221-submission)
+
+Checkout this git tag: `git checkout 221-submission`
 
 There is a `cabal.freeze` file in the repository that will automatically choose the right dependencies.
 Navigate to root of project and then run: `cabal update` & `cabal run`.
