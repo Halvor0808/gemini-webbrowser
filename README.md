@@ -22,9 +22,12 @@ Checkout to the git tag: `git checkout 221-submission`
 There is a `cabal.freeze` file in the repository that will automatically choose the right dependencies.
 Navigate to root of project and then run: `cabal update` & `cabal run`.
 
-# Test suite
+# Tests
 There is the tiniest Test Suite called `test`.
 Run it by running `cabal test` from the root directory.
+
+There are also some unit tests.
+Run them by running `cabal repl test`, and then running `unitTests`
 
 
 # Known issues

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Protocol.Parser.TestGemtextParser (
+module Protocol.Parser.TestGemtextParser (
     testGemtextParser
 ) where
 

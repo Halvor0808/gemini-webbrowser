@@ -1,5 +1,5 @@
 
-module Main where
+module Main (main, unitTests) where
 
 import Test.QuickCheck
 
@@ -8,12 +8,21 @@ import Network.URI
 import Control.Monad (liftM3)
 import Data.Char (isAlphaNum)
 import qualified Data.ByteString.UTF8 as BSU
+import Protocol.Parser.TestResponse
+import Protocol.Parser.TestRequest
+import Protocol.Parser.TestGemtextParser
+import GHC.Base (IO)
 
 main :: IO ()
 main = do
   quickCheck prop_convertUrlToUri
   quickCheck prop_convertingUrlToUriAndBack
 
+unitTests :: IO ()
+unitTests = do
+  testResponse
+  testRequest
+  testGemtextParser
 
 instance Arbitrary Url where
     arbitrary = oneof [arbitraryUrl, arbitraryRelative]

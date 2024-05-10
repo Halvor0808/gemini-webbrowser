@@ -51,7 +51,7 @@ nums =  ['0'..'9']
 testParserIO :: (Show r, Eq r) => Parser r -> ByteString -> Bool ->  IResult ByteString r -> IO ()
 testParserIO p input feedEmpty expected = case testParser p input feedEmpty expected of
     Right True  -> putStrLn "Test passed!"
-    Left (msg, exp, actual) -> mapM_ (putStrLn . (<> "\n"))  [msg, exp, actual]
+    Left (msg, exp, actual) -> mapM_ (print . (<> "\n"))  [msg, exp, actual]
 
 -- returns Right True if test passed, Left with (input, expected, actual) if failed.
 -- Boolean is for feeding empty input to parser, if parser requires more input to terminate.

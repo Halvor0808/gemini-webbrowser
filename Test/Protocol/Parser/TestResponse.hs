@@ -1,19 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Protocol.Parser.TestResponse (
+module Protocol.Parser.TestResponse (
    testResponse
 )
 where
 
 import Utils.ParseUtil ( testParserIO, pParameters )
 import Protocol.Parser.Response
-import Test.Protocol.Parser.TestGemtextParser (testGemtextParser)
+import Protocol.Parser.TestGemtextParser (testGemtextParser)
 
 import Data.Attoparsec.ByteString.Char8 (IResult(..))
 import qualified Data.ByteString.Char8 as C8
 import Protocol.Data.Response (StatusCode(..), Parameters (Parameters), makeMime, Response (..), Line (..))
 import Protocol.Data.Request (Url(..))
 import Test.QuickCheck.State (State(expected))
+import Data.Default.Class
+
 
 testResponse :: IO ()
 testResponse = do
@@ -64,7 +66,7 @@ testMime = do
   illegalCharDef
   where
     mimeDefault       remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
-    mimeDefaultParams remainder = Done remainder (makeMime (Just ("text", "gemini")) (Just (Parameters [("charset","utf-8")])))
+    mimeDefaultParams remainder = Done remainder def
     --
     simpleNoParams   = testParserIO pMime "text/gemini" True
                           (Done "" (makeMime (Just ("text", "gemini")) Nothing))
@@ -91,9 +93,9 @@ testResponseParser = do
   missingEOL
   recoverSlash
   simpleAnyFail -- error messages (40-69 range)
-  content01 <- C8.readFile "app/Test/Input/response01-success.eg"
+  content01 <- C8.readFile "Test/Input/response01-success.eg"
   testParserIO pResponse content01 True  expectedResponse01
-  content02 <- C8.readFile "app/Test/Input/response02-success.eg"
+  content02 <- C8.readFile "Test/Input/response02-success.eg"
   testParserIO pResponse content02 True expectedResponse02
   where
     simple15      = testParserIO pResponse "15 Input prompt. Gimme some\r\n" True

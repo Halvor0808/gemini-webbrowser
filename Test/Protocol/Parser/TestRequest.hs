@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Test.Protocol.Parser.TestRequest (
+module Protocol.Parser.TestRequest (
   testRequest
 )
 where
