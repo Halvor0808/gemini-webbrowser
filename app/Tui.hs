@@ -50,6 +50,7 @@ data St =
      , _currentPage   :: Url
      , _history       :: L.List Name Url
      , _previousFocus :: Name
+     , _helpPageLines :: L.List Name Line
      } deriving (Show)
 makeLenses ''St
 
@@ -59,7 +60,7 @@ makeLenses ''St
 drawUi :: St -> [Widget Name]
 drawUi st = do
   case F.focusGetCurrent (_focusRing st) of
-    Just HelpPage -> [helpPage]
+    Just HelpPage -> [drawHelpPage st]
     Just History  -> [drawHistory st]
     Just _ -> [ui]
   where
@@ -80,11 +81,9 @@ drawUi st = do
                       , str ("Focus: " <> maybe "None" show (F.focusGetCurrent $ _focusRing st))
                       , str ("Current Line: " <> maybe "None" (show . snd) (L.listSelectedElement $ _content st))
                       ]
-    helpPage        = padTopBottom 10 . hCenter . vLimit 80 . hLimit 80  . B.borderWithLabel (str "Help Page") 
-                      . viewport HelpPage T.Vertical . vLimit 50 $ 
-                      L.renderList (\_ l -> renderLine l) False lines
-                      where
-                        lines = mkList HelpPageContent (linesFromByteString getHelpPage)
+    drawHelpPage st = hCenter . B.borderWithLabel (str "Help Page") 
+                      . viewport HelpPage T.Vertical . vLimit 35 $ 
+                      L.renderList (\_ l -> renderLine l) True (_helpPageLines st)
 
 pageContent :: St -> Widget Name
 pageContent st =
@@ -156,6 +155,7 @@ handleEvent ev = do
     Just SearchField -> handleSearchFieldEvent ev
     Just PageContent -> handlePageContentEvent ev
     Just History     -> handleHistoryEvent ev
+    Just HelpPage    -> handleHelpPageEvent ev
     _                 -> return ()
 
 handleSearchFieldEvent :: T.BrickEvent Name e -> EventM Name St ()
@@ -200,6 +200,17 @@ handleHistoryEvent ev =
       queryUrl selectedUrl
       togglePage History
     (T.VtyEvent e) -> zoom history $ L.handleListEvent e
+    _ -> return ()
+
+handleHelpPageEvent :: T.BrickEvent Name e -> EventM Name St ()
+handleHelpPageEvent ev =
+  case ev of
+    (T.VtyEvent ev@(V.EvKey V.KUp [])) -> do
+        zoom helpPageLines $ M.vScrollBy (M.viewportScroll HelpPage) (-1)
+        zoom helpPageLines $ L.handleListEvent ev
+    (T.VtyEvent ev@(V.EvKey V.KDown [])) -> do
+        zoom helpPageLines $ M.vScrollBy (M.viewportScroll HelpPage) 1
+        zoom helpPageLines $ L.handleListEvent ev
     _ -> return ()
 
 togglePage :: Name -> EventM Name St ()
@@ -251,6 +262,7 @@ initialState =
      home
      (mkList History [home])
      PageContent
+     helpPage
 
 app :: M.App St e Name
 app = M.App
@@ -260,6 +272,9 @@ app = M.App
         , M.appStartEvent = startEvent
         , M.appAttrMap = const attrbMap
         }
+
+helpPage :: L.List Name Line
+helpPage = mkList HelpPageContent getHelpPage
 
 startEvent :: EventM Name St ()
 startEvent = do
