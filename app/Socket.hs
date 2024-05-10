@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
-module Socket ( retrievePage, sockTests, getResponse ) where
+module Socket ( sockTests, getResponse ) where
 
 import qualified Control.Exception as E
 
@@ -41,18 +41,19 @@ getResponse url = getResponse' maxRedirects url url
 
 getResponse' :: Int -> Url -> Url -> IO [Line]
 getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> BSU.fromString (showUrl target)]
-getResponse' i target url = do
-  response <- retrievePage url
-  case parseOnly pResponse response of
-    Left err -> do
-      return [TextLine $ BSU.fromString err <> " :\n", TextLine response]
-    Right response ->
-      case response of
-        INPUT _ _             -> return [TextLine "Input response"]
-        SUCCESS _ _ lines     -> return lines
-        REDIRECT _ newUrl     -> getResponse' (i-1) target newUrl
-        ANY_FAIL code failMsg -> return [
-          TextLine $ "Failed response: " <> BSU.fromString (show code) <>" :"<> failMsg]
+getResponse' i target url = retrievePage url >>= handleResponse
+  where
+    handleResponse response = 
+      case parseOnly pResponse response of
+        Left err -> do
+          return [TextLine $ BSU.fromString err <> " :\n", TextLine response]
+        Right response ->
+          case response of
+            INPUT _ _             -> return [TextLine "Input response"]
+            SUCCESS _ _ lines     -> return lines
+            REDIRECT _ newUrl     -> getResponse' (i-1) target newUrl
+            ANY_FAIL code failMsg -> return [
+              TextLine $ "Failed response: " <> BSU.fromString (show code) <>" :"<> failMsg]
 
 
 -- TESTING
@@ -62,7 +63,7 @@ t2 = Url {scheme = "gemini", authority = "kennedy.gemi.dev", port = 1965, path =
 
 
 sockTests = do
-  -- print "Retrieving geminiprotocol.net"
+  -- print "Retrieving geminiprotocol.net"  -- does not work on Windows due to handling of TLS in socket.
   -- retrievePage t0 >>= print
   -- putStrLn "\n"
   print "Retrieving kennedy.gmi"
