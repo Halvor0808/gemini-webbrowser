@@ -83,7 +83,10 @@ drawUi st = do
                       ]
     drawHelpPage st = hCenter . B.borderWithLabel (str "Help Page") 
                       . viewport HelpPage T.Vertical . vLimit 35 $ 
-                      L.renderList (\_ l -> renderLine l) True (_helpPageLines st)
+                      L.renderList drawLine True (_helpPageLines st)
+                      where 
+                        drawLine True  line = forceAttr L.listSelectedFocusedAttr . visible $ renderLine line
+                        drawLine False line = renderLine line 
 
 pageContent :: St -> Widget Name
 pageContent st =
@@ -97,13 +100,12 @@ pageContent st =
           (True, False) -> forceAttr L.listSelectedAttr $ renderLine line
           _             -> renderLine line
 
-
 drawHistory :: St -> Widget Name
 drawHistory st =
   padTop (Pad 10) . hCenter . vLimitPercent 50 . hLimit 65  .
   B.borderWithLabel (str "History") $ list
   where list = L.renderListWithIndex renderUrl True (_history st)
-        renderUrl i True url  = withDefAttr L.listSelectedAttr . strWrap
+        renderUrl i True url  = forceAttr L.listSelectedFocusedAttr . strWrap
                               $ show i <> ".  " <> showUrl url
         renderUrl i False url = withDefAttr linkAttr . strWrap
                               $ show i <> ".  " <> showUrl url
