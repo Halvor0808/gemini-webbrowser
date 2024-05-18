@@ -11,7 +11,7 @@ import Protocol.Data.Request (Url(..), authority, path, showUrl)
 import Protocol.Data.Response (Line(..), Response (..))
 import Data.Attoparsec.ByteString.Char8
 import Protocol.Parser.Response (pResponse)
-import qualified Data.ByteString.UTF8 as BSU
+import qualified Data.ByteString.Lazy.UTF8 as BLU
 
 
 addCallback :: ClientParams -> ClientParams
@@ -20,12 +20,12 @@ addCallback params = params { clientHooks = modi $ clientHooks params }
         modi ch = ch { onServerCertificate = valCer }
         valCer _ _ _ _ = return []
 
-retrievePage :: Url -> IO BSU.ByteString
+retrievePage :: Url -> IO BLU.ByteString
 retrievePage url = do
-  let host = BSU.toString $ authority url
+  let host = BLU.toString $ authority url
   params <- addCallback <$> newDefaultClientParams (host, ":1965")
   connect params host "1965" $ \(ctx,_) -> do
-    send ctx ("gemini://" <> BSU.fromString host <> path url <> "\r\n")
+    send ctx ("gemini://" <> BLU.fromString host <> path url <> "\r\n")
     recvAll ctx
   where
     recvAll ctx = do
@@ -40,20 +40,20 @@ getResponse url = getResponse' maxRedirects url url
   where maxRedirects = 6
 
 getResponse' :: Int -> Url -> Url -> IO [Line]
-getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> BSU.fromString (showUrl target)]
+getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> BLU.fromString (showUrl target)]
 getResponse' i target url = retrievePage url >>= handleResponse
   where
     handleResponse response = 
       case parseOnly pResponse response of
         Left err -> do
-          return [TextLine $ BSU.fromString err <> " :\n", TextLine response]
+          return [TextLine $ BLU.fromString err <> " :\n", TextLine response]
         Right response ->
           case response of
             INPUT _ _             -> return [TextLine "Input response"]
             SUCCESS _ _ lines     -> return lines
             REDIRECT _ newUrl     -> getResponse' (i-1) target newUrl
             ANY_FAIL code failMsg -> return [
-              TextLine $ "Failed response: " <> BSU.fromString (show code) <>" :"<> failMsg]
+              TextLine $ "Failed response: " <> BLU.fromString (show code) <>" :"<> failMsg]
 
 
 -- TESTING
