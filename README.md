@@ -39,18 +39,10 @@ Run them by running `cabal repl test`, and then running `unitTests`
 
 
 # TODO
-- [ ] Change to LazyByteStrings
-  - [ ] Update program 
-    - [ ] Parser
-    - [ ] TUI
-  - [ ] Update tests
+- [x] Change to LazyByteStrings
 
 - Protocol
   - Parsers
-    - General
-      - [ ] Deal with use of `consumeRestOfLine` Bug: used on all gemtext lines, but will fail if there is not a line break, but end of input instead
-    - Request
-      - [ ] Do I have to deal with U+FEFF ("Byte order mark")? (see gemini docs)
     - Response
       - [ ] What to do with `makeMime`, `pMime` & `Mime`
         - Currently: recovers for any mistake with default: text/gemini charset=utf-8. Should it fail instead of default? Should it only default if whole `<META>` is empty ("")?
@@ -63,7 +55,7 @@ Run them by running `cabal repl test`, and then running `unitTests`
     - [x] Resolving relative URLs
   - [x] Allow history, and history navigation
   - [ ] Handle preformatted lines being cut off.
-  - [ ]  When rendering pages, the border is choppy
+  - [ ] When rendering pages, the border is choppy
 
 TUI Goal:
 ```
