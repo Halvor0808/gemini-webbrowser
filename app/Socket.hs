@@ -2,16 +2,16 @@
 {-# LANGUAGE LambdaCase #-}
 module Socket ( sockTests, getResponse ) where
 
-import qualified Control.Exception as E
 
 import Network.Simple.TCP.TLS
 import Network.TLS
-import Control.Monad.IO.Class (liftIO)
 import Protocol.Data.Request (Url(..), authority, path, showUrl)
 import Protocol.Data.Response (Line(..), Response (..))
-import Data.Attoparsec.ByteString.Char8
 import Protocol.Parser.Response (pResponse)
-import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified Data.Attoparsec.ByteString.Lazy as AL (parseOnly)
+import qualified Data.ByteString.Lazy.UTF8 as BLU (toString)
+import qualified Data.ByteString.UTF8 as BSU (ByteString, toString, fromString)
+import qualified Data.ByteString.Lazy as BL (fromStrict, toStrict)
 
 
 addCallback :: ClientParams -> ClientParams
@@ -20,12 +20,12 @@ addCallback params = params { clientHooks = modi $ clientHooks params }
         modi ch = ch { onServerCertificate = valCer }
         valCer _ _ _ _ = return []
 
-retrievePage :: Url -> IO BLU.ByteString
+retrievePage :: Url -> IO BSU.ByteString
 retrievePage url = do
-  let host = BLU.toString $ authority url
+  let host = BSU.toString $ authority url
   params <- addCallback <$> newDefaultClientParams (host, ":1965")
   connect params host "1965" $ \(ctx,_) -> do
-    send ctx ("gemini://" <> BLU.fromString host <> path url <> "\r\n")
+    send ctx ("gemini://" <> BSU.fromString host <> path url <> "\r\n")
     recvAll ctx
   where
     recvAll ctx = do
@@ -40,20 +40,20 @@ getResponse url = getResponse' maxRedirects url url
   where maxRedirects = 6
 
 getResponse' :: Int -> Url -> Url -> IO [Line]
-getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> BLU.fromString (showUrl target)]
-getResponse' i target url = retrievePage url >>= handleResponse
+getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> (BSU.fromString . showUrl) target]
+getResponse' i target url = retrievePage url >>= handleResponse . BL.fromStrict
   where
     handleResponse response = 
-      case parseOnly pResponse response of
+      case AL.parseOnly pResponse response of
         Left err -> do
-          return [TextLine $ BLU.fromString err <> " :\n", TextLine response]
+          return [TextLine $ BSU.fromString err <> " :\n", TextLine (BL.toStrict response)]
         Right response ->
           case response of
             INPUT _ _             -> return [TextLine "Input response"]
             SUCCESS _ _ lines     -> return lines
             REDIRECT _ newUrl     -> getResponse' (i-1) target newUrl
             ANY_FAIL code failMsg -> return [
-              TextLine $ "Failed response: " <> BLU.fromString (show code) <>" :"<> failMsg]
+              TextLine $ "Failed response: " <> BSU.fromString (show code) <>" :"<> failMsg]
 
 
 -- TESTING

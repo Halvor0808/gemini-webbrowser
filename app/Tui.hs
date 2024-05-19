@@ -20,7 +20,7 @@ import Brick (style)
 import Graphics.Vty.Attributes
 import qualified Graphics.Vty as V
 
-import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified Data.ByteString.UTF8 as BSU (fromString, toString)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as Txt
 import Text.Wrap
@@ -34,7 +34,7 @@ import Socket (getResponse)
 import Pages
 import Network.URI
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Default.Class
+import Data.Default.Class  (Default(..))
 
 
 data Name =  PageContent | ListContent| SearchField | HelpPage | HelpPageContent | History
@@ -112,26 +112,26 @@ drawHistory st =
 
 renderLine :: Line -> Widget n
 renderLine (TextLine "") = strWrap " "
-renderLine (TextLine t) = strWrap $ BLU.toString t
+renderLine (TextLine t) = strWrap $ BSU.toString t
 renderLine (LinkLine url Nothing) =
   withDefAttr linkAttr $ hyperlink (Txt.pack (show url)) . strWrap $ showUrl url
 renderLine (LinkLine url (Just s)) =
-  withDefAttr linkAttr (hyperlink (Txt.pack (show url)) $ strWrap $ BLU.toString s)
+  withDefAttr linkAttr (hyperlink (Txt.pack (show url)) $ strWrap $ BSU.toString s)
 renderLine (TogglePreformatMode "") = withDefAttr preformatAttr (strWrap "```")
 renderLine (TogglePreformatMode t) =
-  withDefAttr preformatAttr (strWrap $ "``` " <> BLU.toString t)
+  withDefAttr preformatAttr (strWrap $ "``` " <> BSU.toString t)
 renderLine (PreformattedTextLine t) =
-  withDefAttr preformatAttr $ strWrapWith dontWrapSettings (BLU.toString t)
+  withDefAttr preformatAttr $ strWrapWith dontWrapSettings (BSU.toString t)
   where
     dontWrapSettings = defaultWrapSettings { preserveIndentation = True, breakLongWords = False }
 renderLine (HeadingLine i t) =
   str (concat (replicate (i - 1) "@ "))
-  <+> withDefAttr headingAttr (strWrap $ BLU.toString t)
+  <+> withDefAttr headingAttr (strWrap $ BSU.toString t)
 renderLine (UnorderedListLine t) =
-  str "  * " <+> strWrapWith wrapSettings (BLU.toString t)
+  str "  * " <+> strWrapWith wrapSettings (BSU.toString t)
 renderLine (QuoteLine t) =
   withDefAttr quoteAttr  (str "  | ")
-  <+> withDefAttr quoteAttr (strWrapWith wrapSettings $ BLU.toString t)
+  <+> withDefAttr quoteAttr (strWrapWith wrapSettings $ BSU.toString t)
 
 wrapSettings :: WrapSettings
 wrapSettings = WrapSettings {fillStrategy = FillIndent 1, fillScope = FillAfterFirst, breakLongWords = True, preserveIndentation = False}
