@@ -18,7 +18,7 @@ import Data.Attoparsec.ByteString.Lazy (Result(..))
 testGemtextParser :: IO ()
 testGemtextParser = do
     putStrLn "----- GemText: -----"
-    testParserIO pLines bodyEx01 True
+    testParserIO pLines bodyEx01 
         (Done "" [HeadingLine 1 "Example title"
                  , TextLine "Welcome to my Gemini Capsule"
                  , UnorderedListLine "example list item"
@@ -26,7 +26,7 @@ testGemtextParser = do
                                  (Just "Link text replcement")
                  , TextLine ""
                  ])
-    testParserIO pLines bodyEx02 True
+    testParserIO pLines bodyEx02 
         (Done "" [HeadingLine 2 "Title level 2"
                  , TextLine "Text in Line"
                  , UnorderedListLine "A list"
@@ -36,7 +36,7 @@ testGemtextParser = do
                                  (Just "See more here!")
                  , HeadingLine 3 "An empty lvl 3 header"
                  ])
-    testParserIO pLines bodyEx03 True  -- fails at last line: missing \r\n
+    testParserIO pLines bodyEx03   -- fails at last line: missing \r\n
         (Done "+++" [HeadingLine 3 "Lvl3 Head"
                     , TextLine "Teeeeeeeeeeeeext"
                     , TextLine "f"

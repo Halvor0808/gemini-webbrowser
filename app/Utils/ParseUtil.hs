@@ -64,27 +64,23 @@ pManyAlphaDigit = AL.takeWhile1 isAlphanumeric
 ----------------------------------------------------------------
 
 -- prints result of parse test in stdout with info if test failed.
-testParserIO :: (Show r, Eq r) => Parser r -> BL.ByteString -> Bool ->  Result r -> IO ()
-testParserIO p input feedEmpty expected =
-    case testParser p input feedEmpty expected of
+testParserIO :: (Show r, Eq r) => Parser r -> BL.ByteString -> Result r -> IO ()
+testParserIO p input expected =
+    case testParser p input expected of
         Right True  -> putStrLn "Test passed!"
         Left (msg, exp, actual) -> mapM_ (print . (<> "\n"))  [msg, exp, actual]
 
 -- returns Right True if test passed, Left with (input, expected, actual) if failed.
 -- Boolean is for feeding empty input to parser, if parser requires more input to terminate.
 -- i.e. avoiding `Result _` in test comparison. See `runParser` below.
-testParser :: (Show r, Eq r) => Parser r -> BL.ByteString -> Bool ->  Result r -> Either (String, String, String) Bool
-testParser p input feedEmpty expected = do
-    let result = runParser feedEmpty p input
+testParser :: (Show r, Eq r) => Parser r -> BL.ByteString -> Result r -> Either (String, String, String) Bool
+testParser p input expected = do
+    let result = AL.parse p input
     case compareParseResult result expected of
         Just True -> Right True
         _         -> Left ("TEST FAILED ON INPUT: " <> BLU.toString input
                           , "EXPECTED: " <> show expected
                           , "ACTUAL  : " <> show result)
-
-runParser :: Bool -> Parser a -> BL.ByteString -> Result a
--- runParser True p input  = AL.feed (AL.parse p input) mempty
-runParser _ = AL.parse
 
 compareParseResult :: Eq a => Result a -> Result a -> Maybe Bool
 compareParseResult (Fail i0 _ _) (Fail i1 _ _) = return (i0 == i1)

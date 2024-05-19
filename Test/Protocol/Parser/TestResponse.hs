@@ -28,12 +28,12 @@ testResponse = do
 testStatusCode :: IO ()
 testStatusCode = do
   putStrLn "----- StatusCode: -----"
-  testParserIO pStatusCode "01" False (Fail "" [] "" )
-  testParserIO pStatusCode "10" False (Done "" (InputCode   1 0))
-  testParserIO pStatusCode "20" False (Done "" (SuccessCode 2 0))
-  testParserIO pStatusCode "35" False (Done "" (RedirCode   3 5))
-  testParserIO pStatusCode "69"  False (Done "" (RequireCertificateCode 6 9))
-  testParserIO pStatusCode "70"  False (Fail "" [] "")
+  testParserIO pStatusCode "01"  (Fail "" [] "" )
+  testParserIO pStatusCode "10"  (Done "" (InputCode   1 0))
+  testParserIO pStatusCode "20"  (Done "" (SuccessCode 2 0))
+  testParserIO pStatusCode "35"  (Done "" (RedirCode   3 5))
+  testParserIO pStatusCode "69"   (Done "" (RequireCertificateCode 6 9))
+  testParserIO pStatusCode "70"   (Fail "" [] "")
 
 testParameters :: IO ()
 testParameters = do
@@ -44,14 +44,14 @@ testParameters = do
   illegalCharErr
   where
     pResponseParams = pParameters ';' '='
-    simple          = testParserIO pResponseParams ";format=markdown\r\n" False
+    simple          = testParserIO pResponseParams ";format=markdown\r\n" 
                           (Done "\r\n" (Parameters [("format","markdown")]))
-    spaceErr        = testParserIO pResponseParams "; notRight=meta.typing\r\n" False
+    spaceErr        = testParserIO pResponseParams "; notRight=meta.typing\r\n" 
                           (Fail " notRight=meta.typing\r\n" [] "")
     complex         = testParserIO pResponseParams
-                          ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"  False
+                          ";typer=sub.typemega;type2=subtype2;typ3=subtyp3;mistake=sub\r\n"  
                           (Done "\r\n" (Parameters [("typer","sub.typemega"),("type2","subtype2"),("typ3","subtyp3"),("mistake","sub")]))
-    illegalCharErr  = testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n" False
+    illegalCharErr  = testParserIO pResponseParams ";đu←↓→œ=wrong;\r\n" 
                           (Fail "đu←↓→œ=wrong;\r\n" [] "")
 
 
@@ -69,20 +69,20 @@ testMime = do
     mimeDefault       remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
     mimeDefaultParams remainder = Done remainder (pure (def :: MIME))
     --
-    simpleNoParams   = testParserIO pMime "text/gemini" True
+    simpleNoParams   = testParserIO pMime "text/gemini" 
                           (Done "" (makeMime (Just ("text", "gemini")) Nothing))
-    simpleParams     = testParserIO pMime "text/gemini;format=gemtext" True
+    simpleParams     = testParserIO pMime "text/gemini;format=gemtext" 
                           (Done "" (makeMime (Just ("text", "gemini")) (Just (Parameters [("format","gemtext")]))))
-    multiParams      = testParserIO pMime "text/word;format=gemtext;name=myFile" True
+    multiParams      = testParserIO pMime "text/word;format=gemtext;name=myFile" 
                           (Done "" (makeMime (Just ("text", "word"))
                           (Just (Parameters [("format","gemtext"),("name","myFile")]))) )
-    spaceErrDefParam = testParserIO pMime "tex t/gemini;candy=nice" True
+    spaceErrDefParam = testParserIO pMime "tex t/gemini;candy=nice" 
                           (mimeDefaultParams "tex t/gemini;candy=nice")
-    spaceErrDefault  = testParserIO pMime "text/gemini 2;candy=nice" True
+    spaceErrDefault  = testParserIO pMime "text/gemini 2;candy=nice" 
                           (mimeDefault " 2;candy=nice")
-    spaceErrDefault2 = testParserIO pMime "text/gemini;no tRight=meta.typing" True
+    spaceErrDefault2 = testParserIO pMime "text/gemini;no tRight=meta.typing" 
                           (mimeDefault ";no tRight=meta.typing")
-    illegalCharDef   = testParserIO pMime "fail/ª™Ł" True
+    illegalCharDef   = testParserIO pMime "fail/ª™Ł" 
                           (mimeDefaultParams "fail/ª™Ł")
 
 testResponseParser :: IO ()
@@ -95,24 +95,24 @@ testResponseParser = do
   recoverSlash
   simpleAnyFail -- error messages (40-69 range)
   content01 <- BL.readFile "Test/Input/response01-success.eg"
-  testParserIO pResponse content01 True  expectedResponse01
+  testParserIO pResponse content01   expectedResponse01
   content02 <- BL.readFile "Test/Input/response02-success.eg"
-  testParserIO pResponse content02 True expectedResponse02
+  testParserIO pResponse content02  expectedResponse02
   where
-    simple15      = testParserIO pResponse "15 Input prompt. Gimme some\r\n" True
+    simple15      = testParserIO pResponse "15 Input prompt. Gimme some\r\n" 
                       (Done "" (INPUT (InputCode 1 5) "Input prompt. Gimme some"))
-    missingDigit  = testParserIO pResponse "1 Input prompt. Gimme some\r\n" True
+    missingDigit  = testParserIO pResponse "1 Input prompt. Gimme some\r\n" 
                       (Fail " Input prompt. Gimme some\r\n" [] "")
-    simple30      = testParserIO pResponse "30 gemini://new.url.visit.to/\r\n" True
+    simple30      = testParserIO pResponse "30 gemini://new.url.visit.to/\r\n" 
                       (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "new.url.visit.to" 1965 "/" "" "")))
-    missingEOL    = testParserIO pResponse "30 gemini://new.url.visit.to/" True
+    missingEOL    = testParserIO pResponse "30 gemini://new.url.visit.to/" 
                       (Fail "" [] "not enough input")
-    recoverSlash  = testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" True
+    recoverSlash  = testParserIO pResponse "30 gemini://recover.missing.forward.slash\r\n" 
                       (Done "" (REDIRECT (RedirCode 3 0) (Url "gemini" "recover.missing.forward.slash" 1965 "/" "" "")))
     simpleAnyFail = do
-                  testParserIO pResponse "40 Error message for 40\r\n" True
+                  testParserIO pResponse "40 Error message for 40\r\n" 
                       (Done "" (ANY_FAIL (TempFailCode 4 0) "Error message for 40"))
-                  testParserIO pResponse "60 You need a ceritificate my man\r\n" True
+                  testParserIO pResponse "60 You need a ceritificate my man\r\n" 
                       (Done "" (ANY_FAIL (RequireCertificateCode 6 0) "You need a ceritificate my man"))
     expectedResponse01 =
       Done "" (SUCCESS {_statusCode = SuccessCode 2 0
