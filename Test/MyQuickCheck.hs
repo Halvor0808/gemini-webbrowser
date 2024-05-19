@@ -1,9 +1,8 @@
-
 module Main (main, unitTests) where
 
 import Test.QuickCheck
-
 import Protocol.Data.Request
+
 import Network.URI
 import Control.Monad (liftM3)
 import Data.Char (isAlphaNum)
@@ -11,7 +10,6 @@ import qualified Data.ByteString.UTF8 as BSU
 import Protocol.Parser.TestResponse
 import Protocol.Parser.TestRequest
 import Protocol.Parser.TestGemtextParser
-import GHC.Base (IO)
 
 main :: IO ()
 main = do

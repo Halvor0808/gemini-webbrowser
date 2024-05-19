@@ -26,6 +26,13 @@ Test-Suite test
                         text,
     other-modules:
             Protocol.Data.Request,
+            Protocol.Data.Response,
+            Protocol.Parser.Request,
+            Protocol.Parser.Response,
+            Protocol.Parser.TestGemtextParser,
+            Protocol.Parser.TestRequest,
+            Protocol.Parser.TestResponse,
+            Utils.ParseUtil,
 
     default-language: Haskell2010
 
@@ -74,6 +81,6 @@ executable gemini-browser
 
         Utils.ParseUtil,
 
-    hs-source-dirs:   app
+    hs-source-dirs:   app, Test
 
     default-language: Haskell2010

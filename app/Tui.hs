@@ -20,7 +20,7 @@ import Brick (style)
 import Graphics.Vty.Attributes
 import qualified Graphics.Vty as V
 
-import qualified Data.ByteString.UTF8 as BSU
+import qualified Data.ByteString.UTF8 as BSU (fromString, toString)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as Txt
 import Text.Wrap
@@ -34,7 +34,7 @@ import Socket (getResponse)
 import Pages
 import Network.URI
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Default.Class
+import Data.Default.Class  (Default(..))
 
 
 data Name =  PageContent | ListContent| SearchField | HelpPage | HelpPageContent | History

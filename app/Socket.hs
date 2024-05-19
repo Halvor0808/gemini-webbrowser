@@ -2,16 +2,16 @@
 {-# LANGUAGE LambdaCase #-}
 module Socket ( sockTests, getResponse ) where
 
-import qualified Control.Exception as E
 
 import Network.Simple.TCP.TLS
 import Network.TLS
-import Control.Monad.IO.Class (liftIO)
 import Protocol.Data.Request (Url(..), authority, path, showUrl)
 import Protocol.Data.Response (Line(..), Response (..))
-import Data.Attoparsec.ByteString.Char8
 import Protocol.Parser.Response (pResponse)
-import qualified Data.ByteString.UTF8 as BSU
+import qualified Data.Attoparsec.ByteString.Lazy as AL (parseOnly)
+import qualified Data.ByteString.Lazy.UTF8 as BLU (toString)
+import qualified Data.ByteString.UTF8 as BSU (ByteString, toString, fromString)
+import qualified Data.ByteString.Lazy as BL (fromStrict, toStrict)
 
 
 addCallback :: ClientParams -> ClientParams
@@ -40,13 +40,13 @@ getResponse url = getResponse' maxRedirects url url
   where maxRedirects = 6
 
 getResponse' :: Int -> Url -> Url -> IO [Line]
-getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> BSU.fromString (showUrl target)]
-getResponse' i target url = retrievePage url >>= handleResponse
+getResponse' 0 target _ = return [TextLine $ "Error: Max redirects reached, when trying to reach" <> (BSU.fromString . showUrl) target]
+getResponse' i target url = retrievePage url >>= handleResponse . BL.fromStrict
   where
     handleResponse response = 
-      case parseOnly pResponse response of
+      case AL.parseOnly pResponse response of
         Left err -> do
-          return [TextLine $ BSU.fromString err <> " :\n", TextLine response]
+          return [TextLine $ BSU.fromString err <> " :\n", TextLine (BL.toStrict response)]
         Right response ->
           case response of
             INPUT _ _             -> return [TextLine "Input response"]

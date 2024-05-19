@@ -13,8 +13,9 @@ import Protocol.Parser.Response (runPLines)
 import Protocol.Data.Response (Line(..), Response(..))
 import Protocol.Data.Request (Url(..))
 
+import Data.ByteString.Lazy.UTF8 as BLU
 import Data.ByteString.UTF8 as BSU
-import Data.ByteString as B (readFile)
+import Data.ByteString.Lazy as BL (readFile, toStrict)
 import GHC.IO (unsafePerformIO)
 
 getTestPage :: IO [Line]
@@ -35,20 +36,20 @@ home = Url { scheme = ""
 
 getLocalPage :: FilePath -> IO [Line]
 getLocalPage filePath = do
-  contents <- B.readFile filePath
+  contents <- BL.readFile filePath
   case runPLines contents of
     Left err -> return [TextLine $ BSU.fromString err]
     Right response -> return response
 
 -- | Get the help page	
--- | Even though it uses `unsafePerformIO`, it's safe because the help page is static.
--- | Until someone changes name of the file and nothing is safe about it.
+-- | Even though it uses `unsafePerformIO`, it's safe enough because the help page is static.
+-- | Until someone changes name of the file and nothing is safe about it...
 getHelpPage :: [Line]
-{-# NOINLINE getHelpPage #-}
 getHelpPage = unsafePerformIO $ getLocalPage "app/helppage.gmi"
+{-# NOINLINE getHelpPage #-}
 
-linesFromByteString :: BSU.ByteString -> [Line]
+linesFromByteString :: BLU.ByteString -> [Line]
 linesFromByteString response = do
    case runPLines response of
-      Left err -> [TextLine $ BSU.fromString err <> " :\n", TextLine response]
+      Left err -> [TextLine $ BSU.fromString err <> " :\n", TextLine (BL.toStrict response)]
       Right lines -> lines
