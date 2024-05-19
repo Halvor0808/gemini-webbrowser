@@ -5,13 +5,13 @@ module Protocol.Parser.TestResponse (
 )
 where
 
-import Utils.ParseUtil ( testParserIO, pParameters )
+import Utils.ParseUtil ( testParserIO )
 import Protocol.Parser.Response
 import Protocol.Parser.TestGemtextParser (testGemtextParser)
 
-import Data.Attoparsec.ByteString.Char8 (IResult(..))
-import qualified Data.ByteString.Char8 as C8
-import Protocol.Data.Response (StatusCode(..), Parameters (Parameters), makeMime, Response (..), Line (..))
+import Data.Attoparsec.ByteString.Lazy (Result(..))
+import qualified Data.ByteString.Lazy as BL
+import Protocol.Data.Response (StatusCode(..), Parameters (Parameters), makeMime, Response (..), Line (..), MIME)
 import Protocol.Data.Request (Url(..))
 import Test.QuickCheck.State (State(expected))
 import Data.Default.Class
@@ -63,10 +63,11 @@ testMime = do
   multiParams
   spaceErrDefParam
   spaceErrDefault
+  spaceErrDefault2
   illegalCharDef
   where
     mimeDefault       remainder = Done remainder (makeMime (Just ("text", "gemini")) Nothing)
-    mimeDefaultParams remainder = Done remainder def
+    mimeDefaultParams remainder = Done remainder (pure (def :: MIME))
     --
     simpleNoParams   = testParserIO pMime "text/gemini" True
                           (Done "" (makeMime (Just ("text", "gemini")) Nothing))
@@ -81,8 +82,8 @@ testMime = do
                           (mimeDefault " 2;candy=nice")
     spaceErrDefault2 = testParserIO pMime "text/gemini;no tRight=meta.typing" True
                           (mimeDefault ";no tRight=meta.typing")
-    illegalCharDef   = testParserIO pMime "fail/ª™§º©‘’&ŁŒıÐª" True
-                          (mimeDefaultParams "fail/ª™§º©‘’&ŁŒıÐª")
+    illegalCharDef   = testParserIO pMime "fail/ª™Ł" True
+                          (mimeDefaultParams "fail/ª™Ł")
 
 testResponseParser :: IO ()
 testResponseParser = do
@@ -93,9 +94,9 @@ testResponseParser = do
   missingEOL
   recoverSlash
   simpleAnyFail -- error messages (40-69 range)
-  content01 <- C8.readFile "Test/Input/response01-success.eg"
+  content01 <- BL.readFile "Test/Input/response01-success.eg"
   testParserIO pResponse content01 True  expectedResponse01
-  content02 <- C8.readFile "Test/Input/response02-success.eg"
+  content02 <- BL.readFile "Test/Input/response02-success.eg"
   testParserIO pResponse content02 True expectedResponse02
   where
     simple15      = testParserIO pResponse "15 Input prompt. Gimme some\r\n" True

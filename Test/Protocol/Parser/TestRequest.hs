@@ -8,7 +8,7 @@ where
 import Utils.ParseUtil (testParserIO)
 import Protocol.Parser.Request
 import Protocol.Data.Request (Url(..))
-import Data.Attoparsec.ByteString (IResult(..))
+import Data.Attoparsec.ByteString.Lazy (Result(..))
 
 
 testRequest :: IO ()

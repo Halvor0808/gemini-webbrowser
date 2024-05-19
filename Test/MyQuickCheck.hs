@@ -1,17 +1,15 @@
-
 module Main (main, unitTests) where
 
 import Test.QuickCheck
-
 import Protocol.Data.Request
+
 import Network.URI
 import Control.Monad (liftM3)
 import Data.Char (isAlphaNum)
-import qualified Data.ByteString.Lazy.UTF8 as BLU
+import qualified Data.ByteString.UTF8 as BSU
 import Protocol.Parser.TestResponse
 import Protocol.Parser.TestRequest
 import Protocol.Parser.TestGemtextParser
-import GHC.Base (IO)
 
 main :: IO ()
 main = do
@@ -36,20 +34,20 @@ instance Arbitrary Url where
           <*> arbitraryFragment
 
         arbitraryChar = elements ['\0'..'\127']
-        arbitraryQuery    = BLU.fromString <$> arbitrary
-        arbitraryFragment = BLU.fromString <$> arbitrary
+        arbitraryQuery    = BSU.fromString <$> arbitrary
+        arbitraryFragment = BSU.fromString <$> arbitrary
         arbitraryRelative = Relative <$> arbitraryPath <*> arbitraryQuery <*> arbitraryFragment
-        arbitraryScheme   = BLU.fromString . filterScheme <$> arbitrarySchemeChars
+        arbitraryScheme   = BSU.fromString . filterScheme <$> arbitrarySchemeChars
           where
             arbitrarySchemeChars = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "+-.")
             filterScheme = filter (\c -> isAlphaNum c || c `elem` "+-.")
-        arbitraryAuthority = BLU.fromString . filterAuthority <$> arbitraryAuthorityChars
+        arbitraryAuthority = BSU.fromString . filterAuthority <$> arbitraryAuthorityChars
             where
                 arbitraryAuthorityChars = listOf $ arbitraryChar `suchThat` notAllowedInAuthority
                 notAllowedInAuthority c = c `notElem` "/?#\r\n"
                 filterAuthority         = filter (\c -> isAlphaNum c || c `elem` "-_.~!$&()+*")
         arbitraryPort = choose (0, 65535)
-        arbitraryPath = BLU.fromString . filterPath <$> arbitraryPathChars
+        arbitraryPath = BSU.fromString . filterPath <$> arbitraryPathChars
           where
             arbitraryPathChars = listOf $ arbitraryChar `suchThat` notAllowedInPath
             notAllowedInPath c = not (isAlphaNum c || c `elem` "-_.~!$&'()*+,;=")

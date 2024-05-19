@@ -8,16 +8,17 @@ import Utils.ParseUtil (testParserIO)
 import Protocol.Data.Response
 import Protocol.Parser.Response
 import Control.Monad.State.Lazy (evalStateT)
-import Data.ByteString (ByteString)
+import Data.ByteString.Lazy (ByteString)
 import Protocol.Data.Request
-import Data.Attoparsec.ByteString (IResult(..))
+
+import Data.Attoparsec.ByteString.Lazy (Result(..))
 
 
 
 testGemtextParser :: IO ()
 testGemtextParser = do
     putStrLn "----- GemText: -----"
-    testParserIO (evalStateT pLines False) bodyEx01 True
+    testParserIO pLines bodyEx01 True
         (Done "" [HeadingLine 1 "Example title"
                  , TextLine "Welcome to my Gemini Capsule"
                  , UnorderedListLine "example list item"
@@ -25,7 +26,7 @@ testGemtextParser = do
                                  (Just "Link text replcement")
                  , TextLine ""
                  ])
-    testParserIO (evalStateT pLines False) bodyEx02 True
+    testParserIO pLines bodyEx02 True
         (Done "" [HeadingLine 2 "Title level 2"
                  , TextLine "Text in Line"
                  , UnorderedListLine "A list"
@@ -35,7 +36,7 @@ testGemtextParser = do
                                  (Just "See more here!")
                  , HeadingLine 3 "An empty lvl 3 header"
                  ])
-    testParserIO (evalStateT pLines False) bodyEx03 True  -- fails at last line: missing \r\n
+    testParserIO pLines bodyEx03 True  -- fails at last line: missing \r\n
         (Done "+++" [HeadingLine 3 "Lvl3 Head"
                     , TextLine "Teeeeeeeeeeeeext"
                     , TextLine "f"
