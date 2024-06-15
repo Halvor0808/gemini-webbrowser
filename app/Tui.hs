@@ -161,15 +161,22 @@ handleEvent ev = do
     _                 -> return ()
 
 handleSearchFieldEvent :: T.BrickEvent Name e -> EventM Name St ()
-handleSearchFieldEvent ev =
-  case ev of
-      (T.VtyEvent (V.EvKey V.KEnter [])) -> do
-          sf <- use searchField
-          let query = concat $ E.getEditContents sf
-              url = if query=="home" then home 
-                    else (uriToUrl . fromJust . parseAbsoluteURI) query
-          queryUrl url
-      _ ->  zoom searchField $  E.handleEditorEvent ev
+handleSearchFieldEvent (T.VtyEvent (V.EvKey V.KEnter [])) = do
+    sf <- use searchField
+    let query = concat $ E.getEditContents sf
+        url = case query of
+          "home" ->  Right home
+          _ -> case parseAbsoluteURI query of
+              Just uri -> Right (uriToUrl uri)
+              Nothing  -> Left ("Url is invalid: " <> query)
+    handleQuery url
+handleSearchFieldEvent ev = zoom searchField $  E.handleEditorEvent ev
+
+handleQuery :: Either String Url -> EventM Name St ()
+handleQuery (Left err) = do
+  content .= mkList ListContent [TextLine (BSU.fromString err)]
+handleQuery (Right url) = queryUrl url
+
 
 handlePageContentEvent :: T.BrickEvent Name e -> EventM Name St ()
 handlePageContentEvent ev =
