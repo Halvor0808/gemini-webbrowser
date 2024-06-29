@@ -40,12 +40,14 @@ common warnings
     ghc-options: -Wall 
 
 executable gemini-browser
+    import: warnings
     ghc-options: -threaded
-    import:           
-        warnings
 
     main-is:          Main.hs
+    hs-source-dirs:   app, Test
 
+    default-language: Haskell2010
+    other-extensions: OverloadedStrings
     build-depends:   
         base ^>=4.17.2.1,
         mtl,
@@ -67,7 +69,7 @@ executable gemini-browser
         data-default-class,
         -- data-default-class is more lightweight than data-default
         QuickCheck,
-    
+
     other-modules:
         Protocol.Data.Response,
         Protocol.Data.Request,
@@ -76,11 +78,7 @@ executable gemini-browser
         Protocol.Parser.Request,
 
         Pages,
-        Tui, 
+        Tui,
         Socket,
 
         Utils.ParseUtil,
-
-    hs-source-dirs:   app, Test
-
-    default-language: Haskell2010
